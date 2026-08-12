@@ -1,0 +1,54 @@
+package com.hari.networkdebugger.ui.navigation
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
+import com.hari.networkdebugger.ui.screens.detail.RequestDetailScreen
+import com.hari.networkdebugger.ui.screens.network.NetworkListScreen
+import com.hari.networkdebugger.ui.screens.settings.SettingsScreen
+import com.hari.networkdebugger.ui.screens.timeline.TimelineScreen
+import kotlinx.serialization.Serializable
+
+@Serializable object NetworkRoute
+@Serializable data class RequestDetailRoute(val eventId: String)
+@Serializable object TimelineRoute
+@Serializable object SettingsRoute
+
+enum class DebuggerTab(val label: String, val icon: ImageVector) {
+    NETWORK("Network", Icons.Default.List),
+    TIMELINE("Timeline", Icons.Default.Schedule)/*,
+    SETTINGS("Settings", Icons.Default.Settings)*/
+}
+
+@Composable
+fun DebuggerNavHost(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = NetworkRoute) {
+        composable<NetworkRoute> {
+            NetworkListScreen(
+                onEventClick = { id -> navController.navigate(RequestDetailRoute(id)) }
+            )
+        }
+        composable<RequestDetailRoute> { backStackEntry ->
+            val route: RequestDetailRoute = backStackEntry.toRoute()
+            RequestDetailScreen(
+                eventId = route.eventId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<TimelineRoute> {
+            TimelineScreen(
+                onEventClick = { id -> navController.navigate(RequestDetailRoute(id)) }
+            )
+        }
+        composable<SettingsRoute> {
+            SettingsScreen()
+        }
+    }
+}

@@ -1,15 +1,13 @@
-# 🌐 Network Debugger for Android & iOS (Native & KMP)
+# 🌐 Network Debugger for Android
 
 [![JitPack](https://jitpack.io/v/HariKulhari06/network-debugger.svg)](https://jitpack.io/#HariKulhari06/network-debugger)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Android_%7C_iOS-green.svg)](https://developer.android.com)
+[![Platform](https://img.shields.io/badge/Platform-Android-green.svg)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-purple.svg)](https://kotlinlang.org)
 
-**Network Debugger** is a lightweight, Chrome DevTools / Proxyman-style in-app network inspection SDK embedded directly inside your **Android** and **iOS** applications.
+**Network Debugger** is a lightweight, Chrome DevTools / Proxyman-style in-app network inspection SDK embedded directly inside your **Android** application.
 
-We offer two solutions side-by-side:
-1. **🤖 Native Android SDK** (`network-debugger`): A pure native Android library (`.aar`) optimized for OkHttp, Room, and Jetpack Compose.
-2. **🌍 Kotlin Multiplatform SDK** (`network-debugger-kmp`): A shared multiplatform library targeting `commonMain`, `androidMain`, and `iosMain` (XCFramework for Xcode / Swift).
+It automatically intercepts network calls made via **OkHttp**, provides a **manual capture API** for custom network stacks, redacts sensitive headers and JSON payloads, persists history via Room DB, and displays a Jetpack Compose developer-friendly dark-theme UI.
 
 ---
 
@@ -37,41 +35,18 @@ dependencyResolutionManagement {
 }
 ```
 
-### Option A: Native Android App
+Add the dependency to your app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
     // Pure native Android SDK
-    debugImplementation("com.github.HariKulhari06:network-debugger:1.1.1")
+    debugImplementation("com.github.HariKulhari06:network-debugger:1.2.0")
 }
-```
-
-### Option B: Kotlin Multiplatform App (Android & iOS)
-
-```kotlin
-// commonMain sourceSet
-kotlin {
-    sourceSets {
-        commonMain.dependencies {
-            implementation("com.github.HariKulhari06:network-debugger-kmp:1.1.1")
-        }
-    }
-}
-```
-
-### Option C: Native iOS App (Xcode / Swift)
-
-Include `NetworkDebuggerKMP.xcframework` via **Swift Package Manager (SPM)** or CocoaPods:
-
-```swift
-import NetworkDebuggerKMP
-
-NetworkDebuggerKmp.shared.configure(enabled: true)
 ```
 
 ---
 
-## 🚀 Quickstart Guide (Android)
+## 🚀 Quickstart Guide
 
 ### 1. Initialize in Application Class
 
@@ -136,12 +111,7 @@ network-debugger/
 ├── network-debugger-manual/       # 🤖 Native Android Manual API
 ├── network-debugger-storage/      # 🤖 Native Android Room Storage
 ├── network-debugger-ui/           # 🤖 Native Android Jetpack Compose UI
-├── network-debugger-demo/         # 📱 Native Android Demo App
-│
-└── network-debugger-kmp/          # 🌍 NEW Kotlin Multiplatform SDK (Android & iOS)
-    ├── commonMain/                # Shared KMP Core, Redaction Engine & KMP Store
-    ├── androidMain/               # Android KMP Target
-    └── iosMain/                   # iOS KMP Target (NSURLProtocol & XCFramework Export)
+└── network-debugger-demo/         # 📱 Native Android Demo App
 ```
 
 ---

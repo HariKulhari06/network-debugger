@@ -42,7 +42,7 @@ dependencyResolutionManagement {
 ```kotlin
 dependencies {
     // Pure native Android SDK
-    debugImplementation("com.github.HariKulhari06:network-debugger:1.1.0")
+    debugImplementation("com.github.HariKulhari06:network-debugger:1.1.1")
 }
 ```
 
@@ -53,7 +53,7 @@ dependencies {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.github.HariKulhari06:network-debugger-kmp:1.1.0")
+            implementation("com.github.HariKulhari06:network-debugger-kmp:1.1.1")
         }
     }
 }

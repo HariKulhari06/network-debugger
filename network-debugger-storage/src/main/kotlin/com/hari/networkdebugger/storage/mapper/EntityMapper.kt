@@ -53,7 +53,9 @@ internal object EntityMapper {
             requestBodyType = requestBody?.contentType?.name,
             responseBodyType = responseBody?.contentType?.name,
             requestBodySize = requestBody?.size,
-            responseBodySize = responseBody?.size
+            responseBodySize = responseBody?.size,
+            sessionId = sessionId,
+            sessionName = sessionName
         )
     }
 
@@ -96,7 +98,9 @@ internal object EntityMapper {
                 downloadMs = downloadMs
             ),
             requestBody = requestBodyData,
-            responseBody = responseBodyData
+            responseBody = responseBodyData,
+            sessionId = sessionId,
+            sessionName = sessionName
         )
     }
 }

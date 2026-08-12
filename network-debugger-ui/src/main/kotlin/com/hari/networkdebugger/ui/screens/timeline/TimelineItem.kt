@@ -35,9 +35,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Renders an individual timeline network item, complete with a relative waterfall timing chart.
+ */
 @Composable
 fun TimelineItem(
     event: NetworkEvent,
+    sessionStart: Long,
+    sessionDuration: Long,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -48,10 +53,22 @@ fun TimelineItem(
     val dotColor = colors.statusColor(event.statusCode ?: 0)
     val outlineColor = colors.outline.copy(alpha = 0.5f)
 
+    // Calculate waterfall timeline ratios
+    val totalMs = event.timing.totalMs ?: 0L
+    val startOffsetPercent = if (sessionDuration > 0L) {
+        ((event.timestamp - sessionStart).toFloat() / sessionDuration).coerceIn(0f, 1f)
+    } else 0f
+
+    val durationPercent = if (sessionDuration > 0L) {
+        (totalMs.toFloat() / sessionDuration).coerceIn(0.02f, 1f - startOffsetPercent)
+    } else 0.05f
+
+    val remainingPercent = (1f - startOffsetPercent - durationPercent).coerceIn(0f, 1f)
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(72.dp)
+            .height(96.dp) // increased height to fit waterfall bar comfortably
             .clickable(onClick = onClick)
             .background(colors.surface)
             .padding(horizontal = 16.dp),
@@ -97,11 +114,11 @@ fun TimelineItem(
             }
         }
 
-        // Right Column: Request Details
+        // Right Column: Request Details & Waterfall timing chart
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(vertical = 12.dp)
+                .padding(vertical = 10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -128,7 +145,7 @@ fun TimelineItem(
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -138,7 +155,7 @@ fun TimelineItem(
                 Text(
                     text = event.host,
                     color = colors.onSurfaceVariant,
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
@@ -151,6 +168,77 @@ fun TimelineItem(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // DevTools-style Waterfall Timing Chart
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(5.dp)
+                    .background(colors.outline.copy(alpha = 0.15f), shape = CircleShape)
+            ) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    if (startOffsetPercent > 0f) {
+                        Spacer(modifier = Modifier.weight(startOffsetPercent))
+                    }
+
+                    if (durationPercent > 0f) {
+                        Row(
+                            modifier = Modifier
+                                .weight(durationPercent)
+                                .fillMaxHeight()
+                                .clip(CircleShape)
+                        ) {
+                            val dnsConnectMs = (event.timing.dnsMs ?: 0L) + (event.timing.connectMs ?: 0L) + (event.timing.tlsMs ?: 0L)
+                            val waitingMs = event.timing.waitingMs ?: 0L
+                            val downloadMs = event.timing.downloadMs ?: 0L
+                            val sumMs = dnsConnectMs + waitingMs + downloadMs
+
+                            if (sumMs > 0L) {
+                                val dnsWeight = dnsConnectMs.toFloat() / sumMs
+                                val waitWeight = waitingMs.toFloat() / sumMs
+                                val downloadWeight = downloadMs.toFloat() / sumMs
+
+                                if (dnsWeight > 0f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(dnsWeight)
+                                            .fillMaxHeight()
+                                            .background(androidx.compose.ui.graphics.Color(0xFFFFC107)) // Yellow: Connect
+                                    )
+                                }
+                                if (waitWeight > 0f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(waitWeight)
+                                            .fillMaxHeight()
+                                            .background(androidx.compose.ui.graphics.Color(0xFF4CAF50)) // Green: TTFB/Wait
+                                    )
+                                }
+                                if (downloadWeight > 0f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(downloadWeight)
+                                            .fillMaxHeight()
+                                            .background(androidx.compose.ui.graphics.Color(0xFF2196F3)) // Blue: Download
+                                    )
+                                }
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(colors.primary) // Fallback entire duration
+                                )
+                            }
+                        }
+                    }
+
+                    if (remainingPercent > 0f) {
+                        Spacer(modifier = Modifier.weight(remainingPercent))
+                    }
                 }
             }
         }

@@ -6,4 +6,6 @@ import com.hari.networkdebugger.core.store.NetworkEventStore
 object DebuggerServiceLocator {
     var store: NetworkEventStore? = null
     var config: NetworkDebuggerConfig? = null
+    var sessionId: String = ""
+    var sessionName: String = ""
 }

@@ -88,18 +88,33 @@ class RoomNetworkEventStore(
         dao.getCount()
     }
 
+    override suspend fun deleteSession(sessionId: String): Unit = withContext(Dispatchers.IO) {
+        val ids = dao.getIdsBySessionId(sessionId)
+        for (id in ids) {
+            val entity = dao.getById(id)
+            entity?.requestBodyRef?.let { bodyStorage.deleteBody(it) }
+            entity?.responseBodyRef?.let { bodyStorage.deleteBody(it) }
+        }
+        dao.deleteBySessionId(sessionId)
+    }
+
+    override suspend fun getSessionEvents(sessionId: String): List<NetworkEvent> = withContext(Dispatchers.IO) {
+        dao.getEventsBySessionId(sessionId).map { mapEntityToDomain(it) }
+    }
+
     private suspend fun enforceRetention() {
-        val count = dao.getCount()
-        if (count > storageConfig.maxRequests) {
-            val toDelete = count - storageConfig.maxRequests
-            val oldestIds = dao.getOldestIds(toDelete)
-            
-            oldestIds.forEach { id ->
-                val entity = dao.getById(id)
-                entity?.requestBodyRef?.let { bodyStorage.deleteBody(it) }
-                entity?.responseBodyRef?.let { bodyStorage.deleteBody(it) }
+        val distinctSessions = dao.getDistinctSessionIds()
+        if (distinctSessions.size > 5) {
+            val sessionsToDelete = distinctSessions.drop(5)
+            for (sessionId in sessionsToDelete) {
+                val ids = dao.getIdsBySessionId(sessionId)
+                for (id in ids) {
+                    val entity = dao.getById(id)
+                    entity?.requestBodyRef?.let { bodyStorage.deleteBody(it) }
+                    entity?.responseBodyRef?.let { bodyStorage.deleteBody(it) }
+                }
+                dao.deleteBySessionId(sessionId)
             }
-            dao.deleteOldest(toDelete)
         }
     }
 

@@ -40,7 +40,7 @@ Add the dependency to your app module's `build.gradle.kts`:
 ```kotlin
 dependencies {
     // Pure native Android SDK
-    debugImplementation("com.github.HariKulhari06:network-debugger:1.2.0")
+    debugImplementation("com.github.HariKulhari06:network-debugger:1.0.0")
 }
 ```
 
@@ -73,6 +73,37 @@ val okHttpClient = OkHttpClient.Builder()
     .addInterceptor(NetworkDebugger.interceptor)
     .eventListenerFactory(NetworkDebugger.timingEventListenerFactory)
     .build()
+```
+
+---
+
+## 🎭 API Mocking
+
+Network Debugger includes a powerful mocking engine that allows you to intercept network calls and return custom responses without changing your backend.
+
+### Define Mock Rules
+
+You can add mock rules programmatically or via the in-app UI:
+
+```kotlin
+NetworkDebugger.addMockRule(
+    MockRule(
+        id = UUID.randomUUID().toString(),
+        pathPattern = "/v1/profile",
+        method = HttpMethod.GET,
+        statusCode = 200,
+        responseBody = """{"name": "Mock User", "email": "mock@example.com"}""",
+        delayMs = 1000 // Simulate network latency
+    )
+)
+```
+
+### Toggle Mocking
+
+Enable or disable all mocks globally:
+
+```kotlin
+NetworkDebugger.setMockingEnabled(true)
 ```
 
 ---

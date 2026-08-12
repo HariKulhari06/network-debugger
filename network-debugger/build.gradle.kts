@@ -38,8 +38,8 @@ dependencies {
     api(project(":network-debugger-core"))
     api(project(":network-debugger-okhttp"))
     api(project(":network-debugger-manual"))
-    implementation(project(":network-debugger-storage"))
-    implementation(project(":network-debugger-ui"))
+    api(project(":network-debugger-storage"))
+    api(project(":network-debugger-ui"))
     
     implementation(libs.core.ktx)
     implementation(libs.okhttp)

@@ -9,6 +9,7 @@ import com.hari.networkdebugger.core.model.NetworkError
 import com.hari.networkdebugger.core.model.NetworkEvent
 import com.hari.networkdebugger.core.model.NetworkEventState
 import com.hari.networkdebugger.core.model.NetworkSource
+import com.hari.networkdebugger.core.model.DebuggerSession
 import com.hari.networkdebugger.core.model.NetworkTiming
 import com.hari.networkdebugger.core.pipeline.NetworkEventCollector
 import kotlinx.coroutines.CoroutineScope
@@ -203,7 +204,9 @@ class ManualNetworkCall internal constructor(
             timing = timing,
             error = error,
             source = NetworkSource.MANUAL,
-            state = state
+            state = state,
+            sessionId = DebuggerSession.sessionId,
+            sessionName = DebuggerSession.sessionName
         )
 
         scope.launch {

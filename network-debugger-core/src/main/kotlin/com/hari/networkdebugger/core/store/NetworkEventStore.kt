@@ -15,4 +15,6 @@ interface NetworkEventStore {
     suspend fun clear()
     suspend fun delete(id: String)
     suspend fun getCount(): Int
+    suspend fun deleteSession(sessionId: String)
+    suspend fun getSessionEvents(sessionId: String): List<NetworkEvent>
 }

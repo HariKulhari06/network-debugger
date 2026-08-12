@@ -41,5 +41,7 @@ internal data class NetworkEventEntity(
     val requestBodyType: String?,
     val responseBodyType: String?,
     val requestBodySize: Long?,
-    val responseBodySize: Long?
+    val responseBodySize: Long?,
+    val sessionId: String,
+    val sessionName: String
 )

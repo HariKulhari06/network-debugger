@@ -30,12 +30,19 @@ class NetworkListViewModel : ViewModel() {
         _activeFilter
     ) { allEvents, query, filter ->
         allEvents.filter { event ->
+            val requestBodyText = (event.requestBody as? com.hari.networkdebugger.core.model.BodyData.Text)?.content
+            val responseBodyText = (event.responseBody as? com.hari.networkdebugger.core.model.BodyData.Text)?.content
+
             // Filter by search query
             val matchesQuery = query.isBlank() ||
                     event.url.contains(query, ignoreCase = true) ||
                     event.host.contains(query, ignoreCase = true) ||
                     event.method.name.contains(query, ignoreCase = true) ||
-                    (event.statusCode?.toString()?.contains(query) == true)
+                    (event.statusCode?.toString()?.contains(query) == true) ||
+                    requestBodyText?.contains(query, ignoreCase = true) == true ||
+                    responseBodyText?.contains(query, ignoreCase = true) == true ||
+                    event.requestHeaders.any { (k, v) -> k.contains(query, ignoreCase = true) || v.any { it.contains(query, ignoreCase = true) } } ||
+                    event.responseHeaders.any { (k, v) -> k.contains(query, ignoreCase = true) || v.any { it.contains(query, ignoreCase = true) } }
 
             // Filter by status category
             val matchesFilter = when (filter) {
@@ -54,7 +61,7 @@ class NetworkListViewModel : ViewModel() {
     val totalCount: StateFlow<Int> = combine(
         store?.getAll() ?: MutableStateFlow(emptyList())
     ) { eventsList ->
-        eventsList.firstOrNull()?.size ?: 0
+        eventsList.size
     }.stateIn(viewModelScope, SharingStarted.Lazily, 0)
 
     fun setSearchQuery(query: String) {
@@ -75,6 +82,19 @@ class NetworkListViewModel : ViewModel() {
     fun clearAll() {
         viewModelScope.launch {
             store?.clear()
+        }
+    }
+
+    fun deleteSession(sessionId: String) {
+        viewModelScope.launch {
+            store?.deleteSession(sessionId)
+        }
+    }
+
+    fun exportSessionHar(context: android.content.Context, sessionId: String, sessionName: String) {
+        viewModelScope.launch {
+            val sessionEvents = store?.getSessionEvents(sessionId) ?: emptyList()
+            com.hari.networkdebugger.ui.util.HarSharer.shareSessionHar(context, sessionName, sessionEvents)
         }
     }
 }

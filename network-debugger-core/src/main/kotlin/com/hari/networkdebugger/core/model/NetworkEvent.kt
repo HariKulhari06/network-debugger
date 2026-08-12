@@ -27,5 +27,7 @@ data class NetworkEvent(
     val timing: NetworkTiming,
     val error: NetworkError?,
     val source: NetworkSource,
-    val state: NetworkEventState
+    val state: NetworkEventState,
+    val sessionId: String,
+    val sessionName: String
 )

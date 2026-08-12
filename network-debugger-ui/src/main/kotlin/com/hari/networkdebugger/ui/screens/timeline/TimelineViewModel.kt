@@ -96,4 +96,17 @@ class TimelineViewModel : ViewModel() {
             store?.clear()
         }
     }
+
+    fun deleteSession(sessionId: String) {
+        viewModelScope.launch {
+            store?.deleteSession(sessionId)
+        }
+    }
+
+    fun exportSessionHar(context: android.content.Context, sessionId: String, sessionName: String) {
+        viewModelScope.launch {
+            val sessionEvents = store?.getSessionEvents(sessionId) ?: emptyList()
+            com.hari.networkdebugger.ui.util.HarSharer.shareSessionHar(context, sessionName, sessionEvents)
+        }
+    }
 }

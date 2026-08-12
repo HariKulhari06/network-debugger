@@ -30,8 +30,7 @@ import com.hari.networkdebugger.ui.navigation.DebuggerNavHost
 import com.hari.networkdebugger.ui.navigation.DebuggerTab
 import com.hari.networkdebugger.ui.navigation.NetworkRoute
 import com.hari.networkdebugger.ui.navigation.RequestDetailRoute
-import com.hari.networkdebugger.ui.navigation.SettingsRoute
-import com.hari.networkdebugger.ui.navigation.TimelineRoute
+import com.hari.networkdebugger.ui.navigation.MocksRoute
 import com.hari.networkdebugger.ui.theme.DebuggerTheme
 import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
 
@@ -59,9 +58,6 @@ class NetworkDebuggerActivity : ComponentActivity() {
                         }
                     },
                     containerColor = colors.surface,
-                    // We set contentWindowInsets to 0 here because we want the individual screens
-                    // to handle their own insets (status bar for TopAppBar, etc.)
-                    // This prevents the root Scaffold from adding top padding to innerPadding.
                     contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
                 ) { innerPadding ->
                     Box(
@@ -84,8 +80,7 @@ class NetworkDebuggerActivity : ComponentActivity() {
         DebuggerTab.entries.forEach { tab ->
             val selected = when (tab) {
                 DebuggerTab.NETWORK -> currentDestination?.hasRoute<NetworkRoute>() == true
-                DebuggerTab.TIMELINE -> currentDestination?.hasRoute<TimelineRoute>() == true
-               // DebuggerTab.SETTINGS -> currentDestination?.hasRoute<SettingsRoute>() == true
+                DebuggerTab.MOCKS -> currentDestination?.hasRoute<MocksRoute>() == true
             }
 
             NavigationBarItem(
@@ -93,8 +88,7 @@ class NetworkDebuggerActivity : ComponentActivity() {
                 onClick = {
                     val route = when (tab) {
                         DebuggerTab.NETWORK -> NetworkRoute
-                        DebuggerTab.TIMELINE -> TimelineRoute
-                       // DebuggerTab.SETTINGS -> SettingsRoute
+                        DebuggerTab.MOCKS -> MocksRoute
                     }
                     navController.navigate(route) {
                         popUpTo(navController.graph.startDestinationId) { 

@@ -5,6 +5,7 @@ import android.content.Intent
 import com.hari.networkdebugger.core.config.NetworkDebuggerConfig
 import com.hari.networkdebugger.core.pipeline.DefaultNetworkEventCollector
 import com.hari.networkdebugger.core.redaction.RedactionEngine
+import com.hari.networkdebugger.core.model.DebuggerSession
 import com.hari.networkdebugger.core.store.NetworkEventStore
 import com.hari.networkdebugger.manual.ManualCaptureApi
 import com.hari.networkdebugger.manual.ManualNetworkCall
@@ -44,9 +45,14 @@ object NetworkDebugger {
         _store = RoomNetworkEventStore(context, config.storageConfig)
         _manualApi = ManualCaptureApi(_collector, config)
         
+        com.hari.networkdebugger.core.mock.MockEngine.initialize(context)
+        
         // Set up the UI service locator
         DebuggerServiceLocator.store = _store
         DebuggerServiceLocator.config = config
+        DebuggerSession.startNewSession()
+        DebuggerServiceLocator.sessionId = DebuggerSession.sessionId
+        DebuggerServiceLocator.sessionName = DebuggerSession.sessionName
         
         // Start pipeline: collector events -> redaction -> store
         scope.launch {

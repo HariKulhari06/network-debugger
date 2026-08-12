@@ -38,4 +38,16 @@ internal interface NetworkEventDao {
 
     @Query("SELECT id FROM network_events ORDER BY timestamp ASC LIMIT :count")
     suspend fun getOldestIds(count: Int): List<String>
+
+    @Query("SELECT DISTINCT sessionId FROM network_events ORDER BY timestamp DESC")
+    suspend fun getDistinctSessionIds(): List<String>
+
+    @Query("DELETE FROM network_events WHERE sessionId = :sessionId")
+    suspend fun deleteBySessionId(sessionId: String)
+
+    @Query("SELECT id FROM network_events WHERE sessionId = :sessionId")
+    suspend fun getIdsBySessionId(sessionId: String): List<String>
+
+    @Query("SELECT * FROM network_events WHERE sessionId = :sessionId ORDER BY timestamp DESC")
+    suspend fun getEventsBySessionId(sessionId: String): List<NetworkEventEntity>
 }

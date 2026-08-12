@@ -3,6 +3,7 @@ package com.hari.networkdebugger.okhttp
 import com.hari.networkdebugger.core.config.NetworkDebuggerConfig
 import com.hari.networkdebugger.core.model.ErrorType
 import com.hari.networkdebugger.core.model.HttpMethod
+import com.hari.networkdebugger.core.model.DebuggerSession
 import com.hari.networkdebugger.core.model.NetworkError
 import com.hari.networkdebugger.core.model.NetworkEvent
 import com.hari.networkdebugger.core.model.NetworkEventState
@@ -14,6 +15,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import okhttp3.Interceptor
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
@@ -52,16 +55,44 @@ public class NetworkDebuggerInterceptor(
             scope.launch { collector.emit(event) }
         }
 
+        // Mock Rule Check
+        val mocksEnabled = com.hari.networkdebugger.core.mock.MockEngine.mockingEnabledState.value
+        val httpMethod = com.hari.networkdebugger.core.model.HttpMethod.from(request.method)
+        val mockRule = if (mocksEnabled) {
+            com.hari.networkdebugger.core.mock.MockEngine.matchRule(request.url.toString(), httpMethod)
+        } else null
+
         val response: Response
-        try {
-            response = chain.proceed(request)
-        } catch (e: IOException) {
-            val endNs = System.nanoTime()
-            val endMs = System.currentTimeMillis()
-            val durationMs = (endNs - startNs) / 1_000_000L
-            val errorEvent = createErrorEvent(eventId, request, requestEvent, e, startMs, endMs, durationMs)
-            scope.launch { collector.emit(errorEvent) }
-            throw e
+        if (mockRule != null) {
+            if (mockRule.delayMs > 0L) {
+                try {
+                    Thread.sleep(mockRule.delayMs)
+                } catch (e: InterruptedException) {
+                    // Ignore
+                }
+            }
+            val mediaType = mockRule.contentType.toMediaTypeOrNull()
+            val responseBody = mockRule.responseBody.toResponseBody(mediaType)
+            response = Response.Builder()
+                .request(request)
+                .protocol(okhttp3.Protocol.HTTP_1_1)
+                .code(mockRule.statusCode)
+                .message("Mocked Response")
+                .body(responseBody)
+                .addHeader("Content-Type", mockRule.contentType)
+                .addHeader("X-Mocked-By", "NetworkDebugger")
+                .build()
+        } else {
+            try {
+                response = chain.proceed(request)
+            } catch (e: IOException) {
+                val endNs = System.nanoTime()
+                val endMs = System.currentTimeMillis()
+                val durationMs = (endNs - startNs) / 1_000_000L
+                val errorEvent = createErrorEvent(eventId, request, requestEvent, e, startMs, endMs, durationMs)
+                scope.launch { collector.emit(errorEvent) }
+                throw e
+            }
         }
 
         val endNs = System.nanoTime()
@@ -122,7 +153,9 @@ public class NetworkDebuggerInterceptor(
             timing = NetworkTiming(startTimestamp = startMs),
             error = null,
             source = NetworkSource.OKHTTP,
-            state = NetworkEventState.REQUEST_CAPTURED
+            state = NetworkEventState.REQUEST_CAPTURED,
+            sessionId = DebuggerSession.sessionId,
+            sessionName = DebuggerSession.sessionName
         )
     }
 

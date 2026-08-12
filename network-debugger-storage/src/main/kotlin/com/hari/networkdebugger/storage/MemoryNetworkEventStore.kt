@@ -57,4 +57,14 @@ class MemoryNetworkEventStore : NetworkEventStore {
     override suspend fun getCount(): Int {
         return eventsFlow.value.size
     }
+
+    override suspend fun deleteSession(sessionId: String) {
+        eventsFlow.update { current ->
+            current.filter { it.sessionId != sessionId }
+        }
+    }
+
+    override suspend fun getSessionEvents(sessionId: String): List<NetworkEvent> {
+        return eventsFlow.value.filter { it.sessionId == sessionId }
+    }
 }

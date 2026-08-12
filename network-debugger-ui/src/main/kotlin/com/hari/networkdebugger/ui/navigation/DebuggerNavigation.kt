@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
@@ -14,17 +15,18 @@ import com.hari.networkdebugger.ui.screens.detail.RequestDetailScreen
 import com.hari.networkdebugger.ui.screens.network.NetworkListScreen
 import com.hari.networkdebugger.ui.screens.settings.SettingsScreen
 import com.hari.networkdebugger.ui.screens.timeline.TimelineScreen
+import com.hari.networkdebugger.ui.screens.mocks.MockRulesScreen
 import kotlinx.serialization.Serializable
 
 @Serializable object NetworkRoute
 @Serializable data class RequestDetailRoute(val eventId: String)
 @Serializable object TimelineRoute
+@Serializable object MocksRoute
 @Serializable object SettingsRoute
 
 enum class DebuggerTab(val label: String, val icon: ImageVector) {
     NETWORK("Network", Icons.Default.List),
-    TIMELINE("Timeline", Icons.Default.Schedule)/*,
-    SETTINGS("Settings", Icons.Default.Settings)*/
+    MOCKS("Mocks", Icons.Default.Tune)
 }
 
 @Composable
@@ -46,6 +48,9 @@ fun DebuggerNavHost(navController: NavHostController) {
             TimelineScreen(
                 onEventClick = { id -> navController.navigate(RequestDetailRoute(id)) }
             )
+        }
+        composable<MocksRoute> {
+            MockRulesScreen()
         }
         composable<SettingsRoute> {
             SettingsScreen()

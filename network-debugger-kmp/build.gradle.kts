@@ -32,6 +32,7 @@ kotlin {
         }
 
         androidMain.dependencies {
+            implementation(project(":network-debugger"))
             implementation(project(":network-debugger-core"))
             implementation(project(":network-debugger-okhttp"))
             implementation(project(":network-debugger-storage"))

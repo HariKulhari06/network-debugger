@@ -1,74 +1,73 @@
-# Implementation Plan: Publish Android Network Debugger SDK to GitHub
+# Implementation Plan: Kotlin Multiplatform (KMP) Network Debugger SDK (Android & iOS)
 
-This plan outlines the steps to prepare, configure, and publish the **Android Network Debugger SDK** to GitHub as an open-source Android library that can be easily integrated by developers via **JitPack**, **GitHub Packages**, or **Maven Central**.
-
----
-
-## User Review Required
-
-> [!IMPORTANT]
-> To publish to GitHub, you will need a GitHub repository (e.g. `https://github.com/your-username/network-debugger`).
-> We will set up your local project with all Gradle publishing scripts, JitPack configuration, GitHub Actions CI/CD workflows, `.gitignore`, Apache 2.0 license, and a complete open-source `README.md`.
+This document outlines the strategy for building a **Kotlin Multiplatform (KMP)** Network Debugger library (`network-debugger-kmp`) that runs seamlessly on both **Android** and **iOS** with shared core logic, network capture engines, and a unified **Compose Multiplatform** UI.
 
 ---
 
-## Proposed Changes
+## Technical Architecture Overview
 
-### Root Project & Build Configurations
-
-#### [NEW] [.gitignore](file:///Users/hari/Documents/kids/Learning/Android/network-debugger/.gitignore)
-- Ignore `.gradle/`, `build/`, `local.properties`, `.DS_Store`, `.idea/`, and temporary build outputs.
-
-#### [NEW] [LICENSE](file:///Users/hari/Documents/kids/Learning/Android/network-debugger/LICENSE)
-- Standard open-source Apache License 2.0.
-
-#### [NEW] [jitpack.yml](file:///Users/hari/Documents/kids/Learning/Android/network-debugger/jitpack.yml)
-- Configures Java 17 for JitPack automated builds:
-```yaml
-jdk:
-  - openjdk17
-before_install:
-  - ./gradlew wrapper
+```text
+network-debugger-kmp/
+├── commonMain/                     # Shared Kotlin Multiplatform Logic
+│   ├── model/                      # NetworkEvent, HttpMethod, BodyData, NetworkTiming
+│   ├── redaction/                  # RedactionEngine (kotlinx.serialization)
+│   ├── ktor/                       # Ktor Client NetworkDebuggerKtorPlugin (Android & iOS)
+│   ├── manual/                     # Shared Manual Capture API
+│   ├── store/                      # Room KMP Database & Memory Store
+│   └── ui/                         # Compose Multiplatform Dark Theme UI (Android & iOS)
+│
+├── androidMain/                    # Android-Specific Extensions
+│   ├── okhttp/                     # OkHttp Interceptor & EventListener
+│   └── platform/                   # Android Activity & Notification/Overlay helpers
+│
+└── iosMain/                        # iOS-Specific Extensions
+    ├── urlsession/                 # NSURLProtocol / URLSession Interceptor
+    └── platform/                   # UIViewController wrapper & Swift export (Framework)
 ```
 
-#### [NEW] [README.md](file:///Users/hari/Documents/kids/Learning/Android/network-debugger/README.md)
-- Complete open-source documentation:
-  - Feature highlights (OkHttp automatic capture, Manual API, dark mode Compose UI, Room persistence, sensitive field redaction, cURL export).
-  - Installation guide via Gradle (JitPack / GitHub Packages).
-  - Quickstart code examples for `NetworkDebugger.initialize()` and `NetworkDebuggerInterceptor`.
-  - Manual capture example (`NetworkDebugger.startManualRequest()`).
-  - Configuration reference (`BodyCaptureConfig`, `RedactionConfig`, `StorageConfig`).
-  - Architecture breakdown & module guide.
+---
+
+## Key KMP Integration Components
+
+### 1. Ktor Client Plugin (`commonMain`)
+Intersects network calls on both Android & iOS when using Ktor (`io.ktor:ktor-client-*`):
+
+```kotlin
+// commonMain
+val client = HttpClient {
+    install(NetworkDebuggerKtorPlugin)
+}
+```
+
+### 2. Native Network Interceptors
+- **Android (`androidMain`)**: `NetworkDebuggerInterceptor` for OkHttp.
+- **iOS (`iosMain`)**: `NSURLProtocol` subclass (`NetworkDebuggerURLProtocol`) that automatically captures all native iOS `URLSession` / Alamofire / Moya network calls.
+
+### 3. Database Persistence (Room KMP)
+- Room now supports Kotlin Multiplatform targeting both Android (`SQLiteDatabase`) and iOS (`sqlite3`).
+
+### 4. Compose Multiplatform UI (`commonMain`)
+- The entire developer UI (Network List, Request Details, Timeline, cURL export, Settings) runs natively on both **Android** (Activity/Composable) and **iOS** (`UIViewController` / SwiftUI view wrapper `NetworkDebuggerView()`).
 
 ---
 
-### Gradle Publishing Configuration
+## Proposed KMP Module Structure
 
-#### [MODIFY] [build.gradle.kts (root)](file:///Users/hari/Documents/kids/Learning/Android/network-debugger/build.gradle.kts)
-- Apply `maven-publish` plugin configuration across library subprojects.
-- Set publication coordinates: `group = "com.github.hari"`, `version = "1.0.0"`.
-
-#### [MODIFY] [network-debugger/build.gradle.kts](file:///Users/hari/Documents/kids/Learning/Android/network-debugger/network-debugger/build.gradle.kts) & Library Submodules
-- Enable single variant publishing (`publishing { singleVariant("release") { withSourcesJar() } }`) for AAR generation.
-
----
-
-### CI/CD Workflows
-
-#### [NEW] [.github/workflows/ci.yml](file:///Users/hari/Documents/kids/Learning/Android/network-debugger/.github/workflows/ci.yml)
-- Automatically runs Gradle build and unit tests on pull requests and pushes to `main`.
-
-#### [NEW] [.github/workflows/publish.yml](file:///Users/hari/Documents/kids/Learning/Android/network-debugger/.github/workflows/publish.yml)
-- Automated publishing workflow to build AARs and create a GitHub Release with attached library artifacts when a release tag (e.g. `v1.0.0`) is created.
+### Submodules:
+1. `network-debugger-core` (`commonMain`): Shared models, pipeline, redaction, Ktor plugin, Room DB.
+2. `network-debugger-okhttp` (`androidMain`): OkHttp interceptor for Android apps.
+3. `network-debugger-ios` (`iosMain`): `NSURLProtocol` interceptor for native iOS apps.
+4. `network-debugger-ui` (`commonMain`): Compose Multiplatform UI for Android & iOS.
+5. `network-debugger` (Facade): Unified Multiplatform entry point.
 
 ---
 
 ## Verification Plan
 
 ### Automated Verification
-1. Run `./gradlew publishToMavenLocal` to verify that all AAR artifacts (`network-debugger`, `network-debugger-core`, `network-debugger-okhttp`, etc.) and POM metadata build cleanly into local Maven repository (`~/.m2/repository`).
-2. Run `./gradlew assembleRelease` to confirm production release build.
+1. `./gradlew :network-debugger-core:compileKotlinIosX64` & `compileKotlinAndroid`
+2. Run unit tests on both JVM (`desktopTest` / `androidTest`) and iOS simulator (`iosX64Test`).
 
-### Git Verification
-1. Run `git status` to verify clean tracking.
-2. Provide simple terminal commands for the user to push to their remote GitHub repository.
+### iOS Verification
+1. Generate XCFramework (`./gradlew assembleNetworkDebuggerXCFramework`).
+2. Import XCFramework into an Xcode iOS Swift project and test `URLSession` interception.

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.ksp) apply false
@@ -9,6 +10,6 @@ plugins {
 }
 
 subprojects {
-    group = "com.github.hari"
+    group = "com.github.HariKulhari06"
     version = "1.0.0"
 }

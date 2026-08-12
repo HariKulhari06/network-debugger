@@ -1,13 +1,15 @@
-# 🌐 Network Debugger for Android
+# 🌐 Network Debugger for Android & iOS (Native & KMP)
 
 [![JitPack](https://jitpack.io/v/HariKulhari06/network-debugger.svg)](https://jitpack.io/#HariKulhari06/network-debugger)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Android-green.svg)](https://developer.android.com)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-purple.svg)](https://kotlinlang.org)
+[![Platform](https://img.shields.io/badge/Platform-Android_%7C_iOS-green.svg)](https://developer.android.com)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-purple.svg)](https://kotlinlang.org)
 
-**Network Debugger** is a lightweight, Chrome DevTools / Proxyman-style in-app network inspection SDK embedded directly inside your Android application.
+**Network Debugger** is a lightweight, Chrome DevTools / Proxyman-style in-app network inspection SDK embedded directly inside your **Android** and **iOS** applications.
 
-It automatically intercepts network calls made via **OkHttp**, provides a **manual capture API** for custom network stacks, redacts sensitive headers and JSON payloads, persists history via Room DB, and displays a Jetpack Compose developer-friendly dark-theme UI.
+We offer two solutions side-by-side:
+1. **🤖 Native Android SDK** (`network-debugger`): A pure native Android library (`.aar`) optimized for OkHttp, Room, and Jetpack Compose.
+2. **🌍 Kotlin Multiplatform SDK** (`network-debugger-kmp`): A shared multiplatform library targeting `commonMain`, `androidMain`, and `iosMain` (XCFramework for Xcode / Swift).
 
 ---
 
@@ -17,25 +19,7 @@ It automatically intercepts network calls made via **OkHttp**, provides a **manu
 | :---: | :---: |
 | <img src="screenshot/network_list.png" width="360" alt="Network List Screen"/> | <img src="screenshot/request_detail.png" width="360" alt="Request Detail Screen"/> |
 
-### 🎬 Live Demo Video
-
-https://github.com/user-attachments/assets/demo.mp4
-
 > 📹 **Video File**: [`screenshot/demo.mp4`](screenshot/demo.mp4)
-
-<video src="screenshot/demo.mp4" width="360" controls></video>
-
----
-
-## ✨ Key Features
-
-- **🚀 OkHttp Auto Interception**: Zero-setup interception via standard `OkHttp` interceptor (`NetworkDebuggerInterceptor`).
-- **⏱ Granular Timing Breakdown**: Captures DNS lookup, TCP connect, TLS handshake, TTFB waiting, and download times using OkHttp `EventListener`.
-- **✍️ Manual Capture API**: Builder API (`ManualNetworkCall`) to log requests from custom HTTP clients, Ktor, Volley, or GraphQL.
-- **🎨 Sleek Compose UI**: Modern dark-theme developer UI with status filter chips (`All`, `2xx`, `3xx`, `4xx`, `5xx`, `Errors`), keyword search, and interactive cURL export.
-- **🔒 Recursive Redaction Engine**: Automatically obfuscates tokens, authorization headers, passwords, and sensitive keys before storing or displaying (`[REDACTED]`).
-- **💾 Hybrid Room & File Storage**: Stores inline metadata in Room DB and large bodies (>4KB) as file references in app cache with configurable retention limits.
-- **🌐 Floating Debug Button**: Optional draggable overlay button with real-time network request counters for instant debugging.
 
 ---
 
@@ -45,7 +29,6 @@ Add **JitPack** to your project's `settings.gradle.kts`:
 
 ```kotlin
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
@@ -54,26 +37,43 @@ dependencyResolutionManagement {
 }
 ```
 
-Add the dependency to your app module's `build.gradle.kts`:
+### Option A: Native Android App
 
 ```kotlin
 dependencies {
-    // Complete SDK (Core + OkHttp + Storage + Compose UI)
+    // Pure native Android SDK
     debugImplementation("com.github.HariKulhari06:network-debugger:1.0.0")
-
-    // Modular components (optional)
-    debugImplementation("com.github.HariKulhari06:network-debugger-okhttp:1.0.0")
-    debugImplementation("com.github.HariKulhari06:network-debugger-manual:1.0.0")
 }
+```
+
+### Option B: Kotlin Multiplatform App (Android & iOS)
+
+```kotlin
+// commonMain sourceSet
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("com.github.HariKulhari06:network-debugger-kmp:1.0.0")
+        }
+    }
+}
+```
+
+### Option C: Native iOS App (Xcode / Swift)
+
+Include `NetworkDebuggerKMP.xcframework` via **Swift Package Manager (SPM)** or CocoaPods:
+
+```swift
+import NetworkDebuggerKMP
+
+NetworkDebuggerKmp.shared.configure(enabled: true)
 ```
 
 ---
 
-## 🚀 Quickstart Guide
+## 🚀 Quickstart Guide (Android)
 
 ### 1. Initialize in Application Class
-
-Initialize the SDK inside your `Application` class:
 
 ```kotlin
 class DemoApplication : Application() {
@@ -93,22 +93,11 @@ class DemoApplication : Application() {
 
 ### 2. Attach Interceptor to OkHttpClient
 
-Add `NetworkDebuggerInterceptor` to your `OkHttpClient.Builder`:
-
 ```kotlin
 val okHttpClient = OkHttpClient.Builder()
     .addInterceptor(NetworkDebugger.interceptor)
     .eventListenerFactory(NetworkDebugger.timingEventListenerFactory)
     .build()
-```
-
-### 3. Open Debugger UI Programmatically
-
-Launch the in-app inspector anywhere in your debug activity:
-
-```kotlin
-// Open the Network Debugger activity directly
-NetworkDebugger.show(context)
 ```
 
 ---
@@ -133,53 +122,26 @@ manualCall.response(
     body = """{"status": "success", "order_id": "ORD-9912"}""",
     contentType = "application/json"
 )
-
-// Or on network failure:
-// manualCall.failure(throwable)
-```
-
----
-
-## ⚙️ Custom Configuration
-
-Tailor storage capacity, payload capture limits, and security redaction rules:
-
-```kotlin
-val config = NetworkDebuggerConfig(
-    enabled = true,
-    showFloatingButton = true,
-    bodyCaptureConfig = BodyCaptureConfig(
-        maxRequestBodySize = 1L * 1024 * 1024,  // 1 MB limit
-        maxResponseBodySize = 2L * 1024 * 1024, // 2 MB limit
-        captureBinary = false
-    ),
-    storageConfig = StorageConfig(
-        maxRequests = 500 // Keeps last 500 requests
-    ),
-    redactionConfig = RedactionConfig(
-        sensitiveHeaders = setOf("Authorization", "Cookie", "X-API-Key"),
-        sensitiveJsonFields = setOf("password", "access_token", "refresh_token", "secret", "client_secret")
-    )
-)
-
-NetworkDebugger.initialize(context, config)
 ```
 
 ---
 
 ## 🛠 Project Architecture
 
-The library is built with a modular 2026 Android architecture:
-
 ```text
 network-debugger/
-├── network-debugger-core/     # Domain models, pipeline, redaction engine & utilities
-├── network-debugger-okhttp/   # OkHttp interceptor & timing capture listeners
-├── network-debugger-manual/   # Builder-style API for manual network logging
-├── network-debugger-storage/  # Room database & disk file storage
-├── network-debugger-ui/       # Jetpack Compose dark-theme inspector UI & screens
-├── network-debugger/          # Unified SDK facade (Singleton entry point)
-└── network-debugger-demo/     # Showcase Android application
+├── network-debugger/              # 🤖 Native Android SDK Facade
+├── network-debugger-core/         # 🤖 Native Android Core Models & Pipeline
+├── network-debugger-okhttp/       # 🤖 Native Android OkHttp Interceptor
+├── network-debugger-manual/       # 🤖 Native Android Manual API
+├── network-debugger-storage/      # 🤖 Native Android Room Storage
+├── network-debugger-ui/           # 🤖 Native Android Jetpack Compose UI
+├── network-debugger-demo/         # 📱 Native Android Demo App
+│
+└── network-debugger-kmp/          # 🌍 NEW Kotlin Multiplatform SDK (Android & iOS)
+    ├── commonMain/                # Shared KMP Core, Redaction Engine & KMP Store
+    ├── androidMain/               # Android KMP Target
+    └── iosMain/                   # iOS KMP Target (NSURLProtocol & XCFramework Export)
 ```
 
 ---

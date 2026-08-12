@@ -1,6 +1,6 @@
 # 🌐 Network Debugger for Android
 
-[![JitPack](https://jitpack.io/v/YOUR_USERNAME/network-debugger.svg)](https://jitpack.io/#YOUR_USERNAME/network-debugger)
+[![JitPack](https://jitpack.io/v/HariKulhari06/network-debugger.svg)](https://jitpack.io/#HariKulhari06/network-debugger)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android-green.svg)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-purple.svg)](https://kotlinlang.org)
@@ -43,14 +43,13 @@ Add the dependency to your app module's `build.gradle.kts`:
 ```kotlin
 dependencies {
     // Complete SDK (Core + OkHttp + Storage + Compose UI)
-    debugImplementation("com.github.YOUR_USERNAME:network-debugger:1.0.0")
+    debugImplementation("com.github.HariKulhari06:network-debugger:1.0.0")
 
-    // No-op version for production release builds (optional)
-    releaseImplementation("com.github.YOUR_USERNAME:network-debugger-noop:1.0.0")
+    // Modular components (optional)
+    debugImplementation("com.github.HariKulhari06:network-debugger-okhttp:1.0.0")
+    debugImplementation("com.github.HariKulhari06:network-debugger-manual:1.0.0")
 }
 ```
-
-*(Replace `YOUR_USERNAME` with your GitHub username or organization).*
 
 ---
 

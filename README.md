@@ -11,15 +11,19 @@ It automatically intercepts network calls made via **OkHttp**, provides a **manu
 
 ---
 
-## 📱 Screenshots & Demo
+## 📱 Screenshots & Demo Video
 
 | Network Event Inspector | Request Details & cURL |
 | :---: | :---: |
-| <img src="screenshots/network_list.png" width="360" alt="Network List Screen"/> | <img src="screenshots/request_detail.png" width="360" alt="Request Detail Screen"/> |
+| <img src="screenshot/network_list.png" width="360" alt="Network List Screen"/> | <img src="screenshot/request_detail.png" width="360" alt="Request Detail Screen"/> |
 
-### 🎬 Demo Video
-Place your recorded demo video at `screenshots/demo_video.mp4`:
-- 📹 [Watch Demo Video](screenshots/demo_video.mp4)
+### 🎬 Live Demo Video
+
+https://github.com/user-attachments/assets/demo.mp4
+
+> 📹 **Video File**: [`screenshot/demo.mp4`](screenshot/demo.mp4)
+
+<video src="screenshot/demo.mp4" width="360" controls></video>
 
 ---
 

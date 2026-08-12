@@ -28,7 +28,7 @@ public object HarExporter {
                 put("version", "1.2")
                 put("creator", buildJsonObject {
                     put("name", "NetworkDebugger")
-                    put("version", "1.0.0")
+                    put("version", "1.0.1")
                 })
                 put("entries", buildJsonArray {
                     events.forEach { event ->

@@ -40,7 +40,7 @@ Add the dependency to your app module's `build.gradle.kts`:
 ```kotlin
 dependencies {
     // Pure native Android SDK
-    debugImplementation("com.github.HariKulhari06:network-debugger:1.0.0")
+    debugImplementation("com.github.HariKulhari06:network-debugger:1.0.1")
 }
 ```
 

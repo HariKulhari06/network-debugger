@@ -11,7 +11,7 @@
   <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-2.1.20-purple.svg" alt="Kotlin"/></a>
 </p>
 
-**Tracea** is a modern, high-performance in-app network debugger for Android. Inspired by tools like Proxyman and Charles, it provides a seamless way to inspect, mock, and analyze network traffic directly within your application.
+**Tracea** is a premium, high-performance in-app network debugger for Android. Designed to run directly inside your application with zero external proxy dependencies, it lets you inspect, mock, and analyze network traffic in real-time.
 
 ---
 
@@ -19,25 +19,26 @@
 
 | Network Inspector | Mocking Rules | Detailed Analysis |
 | :---: | :---: | :---: |
-| <img src="screenshot/Screenshot_20260813_093825.png" width="280" alt="Network List"/> | <img src="screenshot/Screenshot_20260813_093838.png" width="280" alt="Mock Rules"/> | <img src="screenshot/Screenshot_20260813_093900.png" width="280" alt="Request Detail"/> |
+| <img src="screenshot/Screenshot_20260813_093825.png" width="280" alt="Network List"/> | <img src="screenshot/Screenshot_20260813_093900.png" width="280" alt="Mock Rules"/> | <img src="screenshot/Screenshot_20260813_093838.png" width="280" alt="Request Detail"/> |
 
 ---
 
 ## ✨ Features
 
-- 🔍 **Real-time Inspection** — Monitor HTTP/HTTPS traffic with deep request/response analysis.
-- 🎭 **Dynamic Mocking** — Intercept and modify responses with path matching, status codes, and custom delays.
-- 🔒 **Privacy First** — Built-in redaction for sensitive headers and JSON keys (auth tokens, passwords, etc.).
-- 📋 **Developer Tools** — Export to **cURL** or **HAR** format for easy debugging in external tools.
-- ⏱️ **Precision Timing** — Detailed breakdown of DNS, TLS handshake, and transfer times.
-- 🎨 **Modern UI** — A premium, minimalist dark-theme interface built entirely with Jetpack Compose.
-- 🔌 **Universal Support** — First-class OkHttp integration + Manual Capture API for any network stack.
+- 🔍 **Real-time Traffic Inspection** — Monitor all incoming and outgoing HTTP/HTTPS calls with color-coded status badges and request/response metrics.
+- 🎭 **Dynamic API Mocking** — Define request interception rules with HTTP method selection, path matching autocomplete, custom status codes, and latency simulation. Includes master toggle switch and disk persistence.
+- 📉 **DevTools Waterfall Timeline** — Visualize network latency metrics with relative timing charts indicating connection time (DNS, TCP, TLS), waiting time (TTFB), and download time.
+- 🔒 **Privacy & Redaction** — Automated masking for sensitive request/response headers (e.g. `Authorization`, `Cookie`) and recursive JSON payload keys (e.g. `password`, `token`).
+- 🎛️ **Session Management** — Organize transactions by debugging sessions. Expand or collapse session details, view request summaries, or delete individual sessions.
+- 🔌 **Draggable Overlay Button** — A floating badge displaying live transaction counts that lets developers launch the debugger interface with a single tap from any screen.
+- 📋 **Export Utilities** — Share network transactions on the fly as copyable **cURL** commands, single request **HAR** records, full-session **HAR** archives, or plain text summaries.
+- 🎨 **Modern Compose UI** — A beautiful, minimalist dark-mode interface built entirely with Jetpack Compose, featuring custom JSON syntax highlighting and pretty-printing.
 
 ---
 
 ## 📦 Installation
 
-Add **JitPack** to your `settings.gradle.kts`:
+Add the **JitPack** repository to your root `settings.gradle.kts`:
 
 ```kotlin
 dependencyResolutionManagement {
@@ -49,10 +50,11 @@ dependencyResolutionManagement {
 }
 ```
 
-Add the dependency to your app's `build.gradle.kts`:
+Add the library dependency to your app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
+    // Enable Tracea only in debug builds
     debugImplementation("com.github.HariKulhari06:tracea:1.0.0")
 }
 ```
@@ -61,47 +63,101 @@ dependencies {
 
 ## 🚀 Quick Start
 
-### 1. Initialize
+### 1. Initialize Tracea
+
+Initialize Tracea in your `Application` subclass:
+
 ```kotlin
-Tracea.initialize(
-    context = this,
-    config = TraceaConfig(
-        enabled = BuildConfig.DEBUG,
-        showFloatingButton = true
-    )
-)
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        Tracea.initialize(
+            context = this,
+            config = TraceaConfig(
+                enabled = BuildConfig.DEBUG,
+                showFloatingButton = true
+            )
+        )
+    }
+}
 ```
 
-### 2. Plug and Play (OkHttp)
+### 2. Attach Interceptor (OkHttp)
+
+Simply add the interceptor to your `OkHttpClient` builder:
+
 ```kotlin
-val client = OkHttpClient.Builder()
+val okHttpClient = OkHttpClient.Builder()
     .addInterceptor(Tracea.interceptor)
-    .eventListenerFactory(Tracea.timingEventListenerFactory)
+    .eventListenerFactory(Tracea.timingEventListenerFactory) // Optional: Enables waterfall timing breakdown
     .build()
 ```
 
 ---
 
-## 🛡️ Advanced: Manual Capture
-For non-OkHttp stacks (WebSockets, legacy libraries, or custom sockets):
+## 🛡️ Advanced: Manual Capture API
+
+For network stacks that do not use OkHttp (such as Ktor, WebSockets, or legacy connection libraries):
 
 ```kotlin
-val call = Tracea.startManualRequest("POST", "https://api.example.com/v1")
-call.requestHeaders(mapOf("Auth" to "redacted"))
-    .response(200, body = "{\"status\":\"ok\"}")
+// 1. Start tracking a new request
+val call = Tracea.startManualRequest(method = "POST", url = "https://api.example.com/v1/users")
+
+// 2. Set headers and payloads
+call.requestHeaders(mapOf("Content-Type" to "application/json", "Authorization" to "Bearer ..."))
+    .requestBody("""{"username": "johndoe"}""", "application/json")
+
+// 3. Emit response on completion
+call.response(
+    statusCode = 201,
+    headers = mapOf("Content-Type" to "application/json"),
+    body = """{"id": 42, "status": "created"}""",
+    contentType = "application/json"
+)
+
+// Or log failures/cancellations
+// call.failure(IOException("Connection timeout"))
+// call.cancel()
+```
+
+---
+
+## ⚙️ Configuration & Redaction
+
+Customize how Tracea operates and redacts sensitive data:
+
+```kotlin
+Tracea.initialize(
+    context = this,
+    config = TraceaConfig(
+        enabled = true,
+        showFloatingButton = true,
+        redactionConfig = RedactionConfig(
+            sensitiveHeaders = setOf("Authorization", "Cookie", "Set-Cookie", "X-Api-Key"),
+            sensitiveJsonKeys = setOf("password", "token", "access_token", "secret")
+        ),
+        storageConfig = StorageConfig(
+            maxRequests = 500 // Automatically purges oldest events to maintain footprint
+        )
+    )
+)
 ```
 
 ---
 
 ## 🏗️ Architecture
 
-Tracea is built as a modular system for maximum flexibility:
-- **Core**: Logic, models, and processing pipeline.
-- **Storage**: Persistent history via Room DB.
-- **UI**: Modern Jetpack Compose debugging interface.
-- **Adapters**: specialized plugins for OkHttp and manual capturing.
+Tracea consists of decoupled, modular components:
+- **`tracea`**: The public facade API.
+- **`tracea-core`**: Core pipeline, data structures, and redaction logic.
+- **`tracea-storage`**: Database management powered by Room DB.
+- **`tracea-ui`**: The user interface built with Jetpack Compose.
+- **`tracea-okhttp`**: Interceptor and network timing event listener adapters.
+- **`tracea-manual`**: Interface for custom network logs capture.
 
 ---
 
 ## 📄 License
-Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
+
+Licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.

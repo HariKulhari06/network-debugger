@@ -1,0 +1,8 @@
+# Global owners
+*       @HariKulhari06
+
+# UI module specific owners
+/tracea-ui/  @HariKulhari06
+
+# Core module specific owners
+/tracea-core/ @HariKulhari06

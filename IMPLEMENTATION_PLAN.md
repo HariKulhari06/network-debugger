@@ -19,9 +19,9 @@ This plan describes how we will visually indicate that mock rules are inactive w
 
 ## Proposed Changes
 
-### UI Component (`network-debugger-ui`)
+### UI Component (`tracea-ui`)
 
-#### [MODIFY] [MockRulesScreen.kt](file:///Users/hari/Documents/kids/Learning/Android/network-debugger/network-debugger-ui/src/main/kotlin/com/hari/networkdebugger/ui/screens/mocks/MockRulesScreen.kt)
+#### [MODIFY] [MockRulesScreen.kt](file:///Users/hari/Documents/kids/Learning/Android/tracea/tracea-ui/src/main/kotlin/com/hari/tracea/ui/screens/mocks/MockRulesScreen.kt)
 * Add warning icon import (`Icons.Default.Warning` / `Icons.Default.Info`).
 * Add the warning banner below the master switch column in the topBar layout.
 * Pass `globalMocksEnabled` to `MockRuleCard` and apply the alpha modifier if false.

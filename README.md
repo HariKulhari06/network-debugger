@@ -1,11 +1,11 @@
-# 🌐 Network Debugger for Android
+# 📡 Tracea for Android
 
-[![JitPack](https://jitpack.io/v/HariKulhari06/network-debugger.svg)](https://jitpack.io/#HariKulhari06/network-debugger)
+[![JitPack](https://jitpack.io/v/HariKulhari06/tracea.svg)](https://jitpack.io/#HariKulhari06/tracea)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android-green.svg)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-purple.svg)](https://kotlinlang.org)
 
-**Network Debugger** is a lightweight, Chrome DevTools / Proxyman-style in-app network inspection SDK embedded directly inside your **Android** application.
+**Tracea** is a lightweight, Chrome DevTools / Proxyman-style in-app network inspection SDK embedded directly inside your **Android** application.
 
 It automatically intercepts network calls made via **OkHttp**, provides a **manual capture API** for custom network stacks, redacts sensitive headers and JSON payloads, persists history via Room DB, and displays a Jetpack Compose developer-friendly dark-theme UI.
 
@@ -18,6 +18,19 @@ It automatically intercepts network calls made via **OkHttp**, provides a **manu
 | <img src="screenshot/network_list.png" width="360" alt="Network List Screen"/> | <img src="screenshot/request_detail.png" width="360" alt="Request Detail Screen"/> |
 
 > 📹 **Video File**: [`screenshot/demo.mp4`](screenshot/demo.mp4)
+
+---
+
+## ✨ Features
+
+- 🔍 **Network Inspection** — View all HTTP requests/responses in real-time
+- 🎭 **Mock Rules** — Define mock responses with path matching, status codes, and delays
+- 🔒 **Redaction** — Automatically redact sensitive headers and JSON fields
+- 📋 **cURL Export** — Copy any request as a cURL command
+- 📊 **HAR Export** — Export network sessions in HAR format
+- ⏱️ **Timing Details** — DNS, connect, TLS, waiting, and download breakdowns
+- 🎨 **Dark Theme UI** — Premium Jetpack Compose interface
+- 🔌 **Manual Capture API** — Support for non-OkHttp network stacks
 
 ---
 
@@ -40,7 +53,7 @@ Add the dependency to your app module's `build.gradle.kts`:
 ```kotlin
 dependencies {
     // Pure native Android SDK
-    debugImplementation("com.github.HariKulhari06:network-debugger:1.0.1")
+    debugImplementation("com.github.HariKulhari06:tracea:1.0.0")
 }
 ```
 
@@ -55,9 +68,9 @@ class DemoApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        NetworkDebugger.initialize(
+        Tracea.initialize(
             context = this,
-            config = NetworkDebuggerConfig(
+            config = TraceaConfig(
                 enabled = BuildConfig.DEBUG,
                 showFloatingButton = true
             )
@@ -70,40 +83,9 @@ class DemoApplication : Application() {
 
 ```kotlin
 val okHttpClient = OkHttpClient.Builder()
-    .addInterceptor(NetworkDebugger.interceptor)
-    .eventListenerFactory(NetworkDebugger.timingEventListenerFactory)
+    .addInterceptor(Tracea.interceptor)
+    .eventListenerFactory(Tracea.timingEventListenerFactory)
     .build()
-```
-
----
-
-## 🎭 API Mocking
-
-Network Debugger includes a powerful mocking engine that allows you to intercept network calls and return custom responses without changing your backend.
-
-### Define Mock Rules
-
-You can add mock rules programmatically or via the in-app UI:
-
-```kotlin
-NetworkDebugger.addMockRule(
-    MockRule(
-        id = UUID.randomUUID().toString(),
-        pathPattern = "/v1/profile",
-        method = HttpMethod.GET,
-        statusCode = 200,
-        responseBody = """{"name": "Mock User", "email": "mock@example.com"}""",
-        delayMs = 1000 // Simulate network latency
-    )
-)
-```
-
-### Toggle Mocking
-
-Enable or disable all mocks globally:
-
-```kotlin
-NetworkDebugger.setMockingEnabled(true)
 ```
 
 ---
@@ -113,7 +95,7 @@ NetworkDebugger.setMockingEnabled(true)
 For networking stacks that cannot use OkHttp interceptors (e.g., custom sockets, WebSockets, or legacy HTTPURLConnection):
 
 ```kotlin
-val manualCall = NetworkDebugger.startManualRequest(
+val manualCall = Tracea.startManualRequest(
     method = "POST",
     url = "https://api.example.com/v1/checkout"
 )
@@ -135,14 +117,14 @@ manualCall.response(
 ## 🛠 Project Architecture
 
 ```text
-network-debugger/
-├── network-debugger/              # 🤖 Native Android SDK Facade
-├── network-debugger-core/         # 🤖 Native Android Core Models & Pipeline
-├── network-debugger-okhttp/       # 🤖 Native Android OkHttp Interceptor
-├── network-debugger-manual/       # 🤖 Native Android Manual API
-├── network-debugger-storage/      # 🤖 Native Android Room Storage
-├── network-debugger-ui/           # 🤖 Native Android Jetpack Compose UI
-└── network-debugger-demo/         # 📱 Native Android Demo App
+tracea/
+├── tracea/                  # 🤖 Native Android SDK Facade
+├── tracea-core/             # 🤖 Native Android Core Models & Pipeline
+├── tracea-okhttp/           # 🤖 Native Android OkHttp Interceptor
+├── tracea-manual/           # 🤖 Native Android Manual API
+├── tracea-storage/          # 🤖 Native Android Room Storage
+├── tracea-ui/               # 🤖 Native Android Jetpack Compose UI
+└── tracea-demo/             # 📱 Native Android Demo App
 ```
 
 ---

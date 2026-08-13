@@ -13,12 +13,12 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "network-debugger"
+rootProject.name = "tracea"
 
-include(":network-debugger-core")
-include(":network-debugger-okhttp")
-include(":network-debugger-manual")
-include(":network-debugger-storage")
-include(":network-debugger-ui")
-include(":network-debugger")
-include(":network-debugger-demo")
+include(":tracea-core")
+include(":tracea-okhttp")
+include(":tracea-manual")
+include(":tracea-storage")
+include(":tracea-ui")
+include(":tracea")
+include(":tracea-demo")

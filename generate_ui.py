@@ -1,6 +1,6 @@
 import os
 
-BASE_DIR = "/Users/hari/Documents/kids/Learning/Android/network-debugger/network-debugger-ui"
+BASE_DIR = "/Users/hari/Documents/kids/Learning/Android/tracea/tracea-ui"
 
 def write_file(path, content):
     full_path = os.path.join(BASE_DIR, path)
@@ -19,7 +19,7 @@ plugins {
 }
 
 android {
-    namespace = "com.hari.networkdebugger.ui"
+    namespace = "com.hari.tracea.ui"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
@@ -39,8 +39,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":network-debugger-core"))
-    implementation(project(":network-debugger-storage"))
+    implementation(project(":tracea-core"))
+    implementation(project(":tracea-storage"))
     
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
@@ -69,8 +69,8 @@ files["src/main/AndroidManifest.xml"] = """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <activity
-            android:name=".NetworkDebuggerActivity"
-            android:theme="@style/Theme.NetworkDebugger"
+            android:name=".TraceaActivity"
+            android:theme="@style/Theme.Tracea"
             android:exported="false" />
     </application>
 </manifest>
@@ -79,28 +79,28 @@ files["src/main/AndroidManifest.xml"] = """
 files["src/main/res/values/themes.xml"] = """
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.NetworkDebugger" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Tracea" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/DebuggerServiceLocator.kt"] = """
-package com.hari.networkdebugger.ui
+files["src/main/kotlin/com/hari/tracea/ui/TraceaServiceLocator.kt"] = """
+package com.hari.tracea.ui
 
-import com.hari.networkdebugger.core.config.NetworkDebuggerConfig
-import com.hari.networkdebugger.core.store.NetworkEventStore
+import com.hari.tracea.core.config.TraceaConfig
+import com.hari.tracea.core.store.NetworkEventStore
 
-object DebuggerServiceLocator {
+object TraceaServiceLocator {
     var store: NetworkEventStore? = null
-    var config: NetworkDebuggerConfig? = null
+    var config: TraceaConfig? = null
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/theme/DebuggerColors.kt"] = """
-package com.hari.networkdebugger.ui.theme
+files["src/main/kotlin/com/hari/tracea/ui/theme/DebuggerColors.kt"] = """
+package com.hari.tracea.ui.theme
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import com.hari.networkdebugger.core.model.HttpMethod
+import com.hari.tracea.core.model.HttpMethod
 
 data class DebuggerColorScheme(
     val surface: Color = Color(0xFF121212),
@@ -144,8 +144,8 @@ data class DebuggerColorScheme(
 val LocalDebuggerColors = staticCompositionLocalOf { DebuggerColorScheme() }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/theme/DebuggerTheme.kt"] = """
-package com.hari.networkdebugger.ui.theme
+files["src/main/kotlin/com/hari/tracea/ui/theme/DebuggerTheme.kt"] = """
+package com.hari.tracea.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -174,8 +174,8 @@ fun DebuggerTheme(content: @Composable () -> Unit) {
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/navigation/DebuggerNavigation.kt"] = """
-package com.hari.networkdebugger.ui.navigation
+files["src/main/kotlin/com/hari/tracea/ui/navigation/DebuggerNavigation.kt"] = """
+package com.hari.tracea.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
@@ -186,10 +186,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.hari.networkdebugger.ui.screens.detail.RequestDetailScreen
-import com.hari.networkdebugger.ui.screens.network.NetworkListScreen
-import com.hari.networkdebugger.ui.screens.settings.SettingsScreen
-import com.hari.networkdebugger.ui.screens.timeline.TimelineScreen
+import com.hari.tracea.ui.screens.detail.RequestDetailScreen
+import com.hari.tracea.ui.screens.network.NetworkListScreen
+import com.hari.tracea.ui.screens.settings.SettingsScreen
+import com.hari.tracea.ui.screens.timeline.TimelineScreen
 import kotlinx.serialization.Serializable
 
 @Serializable object NetworkRoute
@@ -229,8 +229,8 @@ fun DebuggerNavHost(navController: NavHostController) {
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/NetworkDebuggerActivity.kt"] = """
-package com.hari.networkdebugger.ui
+files["src/main/kotlin/com/hari/tracea/ui/TraceaActivity.kt"] = """
+package com.hari.tracea.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -251,15 +251,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.hari.networkdebugger.ui.navigation.DebuggerNavHost
-import com.hari.networkdebugger.ui.navigation.DebuggerTab
-import com.hari.networkdebugger.ui.navigation.NetworkRoute
-import com.hari.networkdebugger.ui.navigation.SettingsRoute
-import com.hari.networkdebugger.ui.navigation.TimelineRoute
-import com.hari.networkdebugger.ui.theme.DebuggerTheme
-import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
+import com.hari.tracea.ui.navigation.DebuggerNavHost
+import com.hari.tracea.ui.navigation.DebuggerTab
+import com.hari.tracea.ui.navigation.NetworkRoute
+import com.hari.tracea.ui.navigation.SettingsRoute
+import com.hari.tracea.ui.navigation.TimelineRoute
+import com.hari.tracea.ui.theme.DebuggerTheme
+import com.hari.tracea.ui.theme.LocalDebuggerColors
 
-class NetworkDebuggerActivity : ComponentActivity() {
+class TraceaActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -309,8 +309,8 @@ class NetworkDebuggerActivity : ComponentActivity() {
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/components/MethodBadge.kt"] = """
-package com.hari.networkdebugger.ui.components
+files["src/main/kotlin/com/hari/tracea/ui/components/MethodBadge.kt"] = """
+package com.hari.tracea.ui.components
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
@@ -318,8 +318,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.hari.networkdebugger.core.model.HttpMethod
-import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
+import com.hari.tracea.core.model.HttpMethod
+import com.hari.tracea.ui.theme.LocalDebuggerColors
 
 @Composable
 fun MethodBadge(method: HttpMethod, modifier: Modifier = Modifier) {
@@ -333,8 +333,8 @@ fun MethodBadge(method: HttpMethod, modifier: Modifier = Modifier) {
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/components/StatusBadge.kt"] = """
-package com.hari.networkdebugger.ui.components
+files["src/main/kotlin/com/hari/tracea/ui/components/StatusBadge.kt"] = """
+package com.hari.tracea.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -347,7 +347,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
+import com.hari.tracea.ui.theme.LocalDebuggerColors
 
 @Composable
 fun StatusBadge(statusCode: Int, statusMessage: String? = null, showMessage: Boolean = false) {
@@ -369,8 +369,8 @@ fun StatusBadge(statusCode: Int, statusMessage: String? = null, showMessage: Boo
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/components/SectionHeader.kt"] = """
-package com.hari.networkdebugger.ui.components
+files["src/main/kotlin/com/hari/tracea/ui/components/SectionHeader.kt"] = """
+package com.hari.tracea.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -384,7 +384,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
+import com.hari.tracea.ui.theme.LocalDebuggerColors
 
 @Composable
 fun SectionHeader(title: String, action: String? = null, onAction: (() -> Unit)? = null) {
@@ -412,8 +412,8 @@ fun SectionHeader(title: String, action: String? = null, onAction: (() -> Unit)?
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/components/CodeBlock.kt"] = """
-package com.hari.networkdebugger.ui.components
+files["src/main/kotlin/com/hari/tracea/ui/components/CodeBlock.kt"] = """
+package com.hari.tracea.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -428,7 +428,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
+import com.hari.tracea.ui.theme.LocalDebuggerColors
 
 @Composable
 fun CodeBlock(content: String, modifier: Modifier = Modifier, onCopy: (() -> Unit)? = null) {
@@ -450,8 +450,8 @@ fun CodeBlock(content: String, modifier: Modifier = Modifier, onCopy: (() -> Uni
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/components/SummaryCardsRow.kt"] = """
-package com.hari.networkdebugger.ui.components
+files["src/main/kotlin/com/hari/tracea/ui/components/SummaryCardsRow.kt"] = """
+package com.hari.tracea.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -463,7 +463,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
+import com.hari.tracea.ui.theme.LocalDebuggerColors
 
 @Composable
 fun SummaryCardsRow(status: String, duration: String, size: String, time: String) {
@@ -489,8 +489,8 @@ private fun SummaryCard(label: String, value: String) {
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/screens/network/NetworkListScreen.kt"] = """
-package com.hari.networkdebugger.ui.screens.network
+files["src/main/kotlin/com/hari/tracea/ui/screens/network/NetworkListScreen.kt"] = """
+package com.hari.tracea.ui.screens.network
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -498,7 +498,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
+import com.hari.tracea.ui.theme.LocalDebuggerColors
 
 @Composable
 fun NetworkListScreen(onEventClick: (String) -> Unit) {
@@ -509,8 +509,8 @@ fun NetworkListScreen(onEventClick: (String) -> Unit) {
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/screens/detail/RequestDetailScreen.kt"] = """
-package com.hari.networkdebugger.ui.screens.detail
+files["src/main/kotlin/com/hari/tracea/ui/screens/detail/RequestDetailScreen.kt"] = """
+package com.hari.tracea.ui.screens.detail
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -518,7 +518,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
+import com.hari.tracea.ui.theme.LocalDebuggerColors
 
 @Composable
 fun RequestDetailScreen(eventId: String, onBack: () -> Unit) {
@@ -529,8 +529,8 @@ fun RequestDetailScreen(eventId: String, onBack: () -> Unit) {
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/screens/timeline/TimelineScreen.kt"] = """
-package com.hari.networkdebugger.ui.screens.timeline
+files["src/main/kotlin/com/hari/tracea/ui/screens/timeline/TimelineScreen.kt"] = """
+package com.hari.tracea.ui.screens.timeline
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -538,7 +538,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
+import com.hari.tracea.ui.theme.LocalDebuggerColors
 
 @Composable
 fun TimelineScreen() {
@@ -549,8 +549,8 @@ fun TimelineScreen() {
 }
 """
 
-files["src/main/kotlin/com/hari/networkdebugger/ui/screens/settings/SettingsScreen.kt"] = """
-package com.hari.networkdebugger.ui.screens.settings
+files["src/main/kotlin/com/hari/tracea/ui/screens/settings/SettingsScreen.kt"] = """
+package com.hari.tracea.ui.screens.settings
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -558,7 +558,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.hari.networkdebugger.ui.theme.LocalDebuggerColors
+import com.hari.tracea.ui.theme.LocalDebuggerColors
 
 @Composable
 fun SettingsScreen() {

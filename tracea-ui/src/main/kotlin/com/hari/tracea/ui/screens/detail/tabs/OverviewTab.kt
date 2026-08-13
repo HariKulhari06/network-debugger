@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hari.tracea.core.model.BodyData
 import com.hari.tracea.core.model.NetworkEvent
+import com.hari.tracea.core.model.isMocked
 import com.hari.tracea.ui.components.CodeBlock
 import com.hari.tracea.ui.components.HeadersSection
 import com.hari.tracea.ui.components.JsonSyntaxHighlighter
@@ -50,6 +51,34 @@ fun OverviewTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
+        if (event.isMocked) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(colors.surfaceVariant, shape = RoundedCornerShape(8.dp))
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "🎭",
+                    fontSize = 20.sp,
+                    modifier = Modifier.padding(end = 12.dp)
+                )
+                Column {
+                    Text(
+                        text = "Mocked Response",
+                        color = colors.sectionHeader,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "This transaction was simulated locally via a Tracea Mock Rule.",
+                        color = colors.onSurfaceVariant,
+                        fontSize = 11.sp
+                    )
+                }
+            }
+        }
         // General Section
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             SectionHeader(title = "General")

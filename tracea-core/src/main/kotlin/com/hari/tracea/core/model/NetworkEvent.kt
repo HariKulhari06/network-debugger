@@ -31,3 +31,13 @@ data class NetworkEvent(
     val sessionId: String,
     val sessionName: String
 )
+
+/**
+ * Extension property to check if this network event was mocked by Tracea.
+ */
+val NetworkEvent.isMocked: Boolean
+    get() = responseHeaders.any { entry ->
+        entry.key.equals("X-Mocked-By", ignoreCase = true) &&
+                entry.value.any { value -> value.equals("Tracea", ignoreCase = true) }
+    }
+

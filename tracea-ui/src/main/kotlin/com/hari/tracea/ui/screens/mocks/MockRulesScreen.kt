@@ -28,7 +28,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -53,6 +56,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +77,7 @@ import com.hari.tracea.ui.components.MethodBadge
 import com.hari.tracea.ui.components.StatusBadge
 import com.hari.tracea.ui.theme.LocalDebuggerColors
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 /**
  * Screen displaying the Mock Rules list and rule creation/editing tools.
@@ -219,12 +224,13 @@ fun MockRulesScreen(
                 }
             }
 
-            // Mock Editor Dialog
+            // Mock Editor Bottom Sheet
             showEditorDialog?.let { rule ->
-                MockRuleEditorDialog(
+                MockRuleEditorBottomSheet(
                     rule = rule,
                     isNew = isNewRule,
                     capturedPaths = capturedPaths,
+                    onImportPayload = { path -> viewModel.getResponseBodyForPath(path) },
                     onDismiss = { showEditorDialog = null },
                     onSave = { updatedRule ->
                         if (isNewRule) {
@@ -318,14 +324,17 @@ private fun MockRuleCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MockRuleEditorDialog(
+private fun MockRuleEditorBottomSheet(
     rule: MockRule,
     isNew: Boolean,
     capturedPaths: List<String>,
+    onImportPayload: suspend (String) -> String?,
     onDismiss: () -> Unit,
     onSave: (MockRule) -> Unit
 ) {
     val colors = LocalDebuggerColors.current
+    val coroutineScope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var pathPattern by remember { mutableStateOf(rule.pathPattern) }
     var selectedMethod by remember { mutableStateOf(rule.method) }
@@ -336,235 +345,345 @@ private fun MockRuleEditorDialog(
 
     var dropdownExpanded by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = if (isNew) "Add Mock Rule" else "Edit Mock Rule",
-                color = colors.onSurface,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+        sheetState = sheetState,
+        containerColor = colors.surface,
+        contentColor = colors.onSurface,
+        scrimColor = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.6f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 40.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Method selection chips
                 Text(
-                    text = "HTTP METHOD",
-                    color = colors.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
+                    text = if (isNew) "Create Mock Rule" else "Configure Mock Rule",
+                    color = colors.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    val methods = listOf(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH)
-                    methods.forEach { method ->
-                        val isSelected = selectedMethod == method
-                        val mColor = colors.methodColor(method)
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) mColor.copy(alpha = 0.25f) else colors.surfaceContainer,
-                            border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, mColor) else null,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { selectedMethod = method }
-                                .padding(vertical = 4.dp)
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = method.name,
-                                    color = if (isSelected) mColor else colors.onSurfaceVariant,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(vertical = 6.dp)
-                                )
-                            }
-                        }
-                    }
-                }
+            }
 
-                // Path pattern with Autocomplete Dropdown
-                Text(
-                    text = "PATH MATCH",
-                    color = colors.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = pathPattern,
-                        onValueChange = { pathPattern = it },
-                        label = { Text("Path Match (e.g. /v1/users)") },
-                        singleLine = true,
-                        trailingIcon = {
-                            if (capturedPaths.isNotEmpty()) {
-                                IconButton(onClick = { dropdownExpanded = !dropdownExpanded }) {
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowDropDown,
-                                        contentDescription = "Show Captured Paths",
-                                        tint = colors.primary
+            // Info Card for testers
+            Card(
+                colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = "💡 Tester Guide",
+                        color = colors.sectionHeader,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Matches endpoints starting with the path pattern. Use 'Import Latest' to fill the payload from live traffic history.",
+                        color = colors.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
+                }
+            }
+
+            // Section 1: Endpoint
+            Card(
+                colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "ENDPOINT MATCH",
+                        color = colors.sectionHeader,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    // Method Selector
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val methods = listOf(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH)
+                        methods.forEach { method ->
+                            val isSelected = selectedMethod == method
+                            val mColor = colors.methodColor(method)
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) mColor.copy(alpha = 0.25f) else colors.surfaceContainer,
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, mColor) else null,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { selectedMethod = method }
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = method.name,
+                                        color = if (isSelected) mColor else colors.onSurfaceVariant,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(vertical = 8.dp)
                                     )
                                 }
                             }
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = colors.primary,
-                            unfocusedBorderColor = colors.outline,
-                            focusedLabelColor = colors.primary,
-                            unfocusedLabelColor = colors.onSurfaceVariant,
-                            focusedTextColor = colors.onSurface,
-                            unfocusedTextColor = colors.onSurface
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    DropdownMenu(
-                        expanded = dropdownExpanded,
-                        onDismissRequest = { dropdownExpanded = false },
-                        modifier = Modifier
-                            .fillMaxWidth(0.9f)
-                            .background(colors.surfaceVariant)
-                    ) {
-                        capturedPaths.forEach { path ->
-                            DropdownMenuItem(
-                                text = { Text(text = path, color = colors.onSurface, fontSize = 13.sp) },
-                                onClick = {
-                                    pathPattern = path
-                                    dropdownExpanded = false
-                                }
-                            )
                         }
                     }
-                }
 
-                // Status Code Presets Row
-                Text(
-                    text = "COMMON STATUS CODES",
-                    color = colors.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    val presets = listOf(200, 201, 400, 401, 403, 404, 500)
-                    presets.forEach { code ->
-                        val isSelected = statusCodeStr == code.toString()
-                        val badgeColor = colors.statusColor(code)
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) badgeColor.copy(alpha = 0.25f) else colors.surfaceContainer,
-                            border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, badgeColor) else null,
+                    // Path Text Field
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = pathPattern,
+                            onValueChange = { pathPattern = it },
+                            label = { Text("Path Match (e.g. /v1/users)") },
+                            singleLine = true,
+                            trailingIcon = {
+                                if (capturedPaths.isNotEmpty()) {
+                                    IconButton(onClick = { dropdownExpanded = !dropdownExpanded }) {
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowDropDown,
+                                            contentDescription = "Show Captured Paths",
+                                            tint = colors.primary
+                                        )
+                                    }
+                                }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = colors.primary,
+                                unfocusedBorderColor = colors.outline,
+                                focusedLabelColor = colors.primary,
+                                unfocusedLabelColor = colors.onSurfaceVariant,
+                                focusedTextColor = colors.onSurface,
+                                unfocusedTextColor = colors.onSurface
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        DropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false },
                             modifier = Modifier
-                                .weight(1f)
-                                .clickable { statusCodeStr = code.toString() }
-                                .padding(vertical = 2.dp)
+                                .fillMaxWidth(0.85f)
+                                .background(colors.surfaceVariant)
                         ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = code.toString(),
-                                    color = if (isSelected) badgeColor else colors.onSurfaceVariant,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(vertical = 6.dp)
+                            capturedPaths.forEach { path ->
+                                DropdownMenuItem(
+                                    text = { Text(text = path, color = colors.onSurface, fontSize = 13.sp) },
+                                    onClick = {
+                                        pathPattern = path
+                                        dropdownExpanded = false
+                                    }
                                 )
                             }
                         }
                     }
                 }
+            }
 
-                // Row for Status Code Input & Delay
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = statusCodeStr,
-                        onValueChange = { statusCodeStr = it },
-                        label = { Text("Status Code") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = colors.primary,
-                            unfocusedBorderColor = colors.outline,
-                            focusedLabelColor = colors.primary,
-                            unfocusedLabelColor = colors.onSurfaceVariant,
-                            focusedTextColor = colors.onSurface,
-                            unfocusedTextColor = colors.onSurface
-                        ),
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    OutlinedTextField(
-                        value = delayStr,
-                        onValueChange = { delayStr = it },
-                        label = { Text("Delay (ms)") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = colors.primary,
-                            unfocusedBorderColor = colors.outline,
-                            focusedLabelColor = colors.primary,
-                            unfocusedLabelColor = colors.onSurfaceVariant,
-                            focusedTextColor = colors.onSurface,
-                            unfocusedTextColor = colors.onSurface
-                        ),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                // Response body payload
-                Text(
-                    text = "RESPONSE PAYLOAD (JSON/TEXT)",
-                    color = colors.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                OutlinedTextField(
-                    value = responseBody,
-                    onValueChange = { responseBody = it },
-                    singleLine = false,
-                    maxLines = 6,
-                    textStyle = androidx.compose.ui.text.TextStyle(
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp
-                    ),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = colors.primary,
-                        unfocusedBorderColor = colors.outline,
-                        focusedTextColor = colors.onSurface,
-                        unfocusedTextColor = colors.onSurface
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp)
-                )
-
-                // Enabled switch
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+            // Section 2: Response Configuration
+            Card(
+                colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Enable Rule Immediately",
-                        color = colors.onSurface,
-                        fontSize = 14.sp
+                        text = "RESPONSE SIMULATION",
+                        color = colors.sectionHeader,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
                     )
+
+                    // Presets
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val presets = listOf(200, 201, 400, 401, 403, 404, 500)
+                        presets.forEach { code ->
+                            val isSelected = statusCodeStr == code.toString()
+                            val badgeColor = colors.statusColor(code)
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) badgeColor.copy(alpha = 0.25f) else colors.surfaceContainer,
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, badgeColor) else null,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { statusCodeStr = code.toString() }
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = code.toString(),
+                                        color = if (isSelected) badgeColor else colors.onSurfaceVariant,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(vertical = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Inputs Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = statusCodeStr,
+                            onValueChange = { statusCodeStr = it },
+                            label = { Text("Status Code") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = colors.primary,
+                                unfocusedBorderColor = colors.outline,
+                                focusedLabelColor = colors.primary,
+                                unfocusedLabelColor = colors.onSurfaceVariant,
+                                focusedTextColor = colors.onSurface,
+                                unfocusedTextColor = colors.onSurface
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        OutlinedTextField(
+                            value = delayStr,
+                            onValueChange = { delayStr = it },
+                            label = { Text("Delay (ms)") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = colors.primary,
+                                unfocusedBorderColor = colors.outline,
+                                focusedLabelColor = colors.primary,
+                                unfocusedLabelColor = colors.onSurfaceVariant,
+                                focusedTextColor = colors.onSurface,
+                                unfocusedTextColor = colors.onSurface
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // Section 3: Response Payload
+            Card(
+                colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "RESPONSE PAYLOAD",
+                            color = colors.sectionHeader,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Format",
+                                color = colors.primary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable {
+                                    try {
+                                        val trimmed = responseBody.trim()
+                                        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+                                            val parsed = kotlinx.serialization.json.Json.parseToJsonElement(trimmed)
+                                            responseBody = kotlinx.serialization.json.Json { prettyPrint = true }.encodeToString(
+                                                kotlinx.serialization.json.JsonElement.serializer(),
+                                                parsed
+                                            )
+                                        }
+                                    } catch (e: Exception) {
+                                        // Ignore
+                                    }
+                                }
+                            )
+
+                            if (pathPattern.isNotBlank()) {
+                                Text(
+                                    text = "Import Latest",
+                                    color = colors.primary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.clickable {
+                                        coroutineScope.launch {
+                                            val latestBody = onImportPayload(pathPattern.trim())
+                                            if (latestBody != null) {
+                                                responseBody = latestBody
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = responseBody,
+                        onValueChange = { responseBody = it },
+                        singleLine = false,
+                        maxLines = 6,
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = colors.primary,
+                            unfocusedBorderColor = colors.outline,
+                            focusedTextColor = colors.onSurface,
+                            unfocusedTextColor = colors.onSurface
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp)
+                    )
+                }
+            }
+
+            // Section 4: Enabled Toggle & Save Action
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Switch(
                         checked = enabled,
                         onCheckedChange = { enabled = it },
@@ -575,36 +694,52 @@ private fun MockRuleEditorDialog(
                             uncheckedTrackColor = colors.surfaceContainer
                         )
                     )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Enable Rule Immediately",
+                        color = colors.onSurface,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (pathPattern.isNotBlank()) {
-                        val finalStatus = statusCodeStr.toIntOrNull() ?: 200
-                        val finalDelay = delayStr.toLongOrNull() ?: 0L
-                        onSave(
-                            rule.copy(
-                                pathPattern = pathPattern.trim(),
-                                method = selectedMethod,
-                                statusCode = finalStatus,
-                                responseBody = responseBody,
-                                delayMs = finalDelay,
-                                enabled = enabled
-                            )
-                        )
-                    }
-                }
+
+            // Bottom Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("SAVE", color = colors.primary, fontWeight = FontWeight.Bold)
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("CANCEL", color = colors.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                }
+
+                Button(
+                    onClick = {
+                        if (pathPattern.isNotBlank()) {
+                            val finalStatus = statusCodeStr.toIntOrNull() ?: 200
+                            val finalDelay = delayStr.toLongOrNull() ?: 0L
+                            onSave(
+                                rule.copy(
+                                    pathPattern = pathPattern.trim(),
+                                    method = selectedMethod,
+                                    statusCode = finalStatus,
+                                    responseBody = responseBody,
+                                    delayMs = finalDelay,
+                                    enabled = enabled
+                                )
+                            )
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.primary),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1.5f)
+                ) {
+                    Text("SAVE RULE", color = colors.surface, fontWeight = FontWeight.Bold)
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("CANCEL", color = colors.onSurfaceVariant)
-            }
-        },
-        containerColor = colors.surfaceVariant
-    )
+        }
+    }
 }

@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hari.tracea.core.model.BodyData
+import com.hari.tracea.core.model.isMocked
 import com.hari.tracea.core.util.DurationFormatter
 import com.hari.tracea.core.util.SizeFormatter
 import com.hari.tracea.ui.components.MethodBadge
@@ -229,11 +230,24 @@ fun RequestDetailScreen(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         currentEvent.statusCode?.let { code ->
-                            StatusBadge(
-                                statusCode = code, 
-                                statusMessage = currentEvent.statusMessage, 
-                                showMessage = true
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                if (currentEvent.isMocked) {
+                                    Text(
+                                        text = "🎭 MOCK",
+                                        color = colors.sectionHeader,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                StatusBadge(
+                                    statusCode = code, 
+                                    statusMessage = currentEvent.statusMessage, 
+                                    showMessage = true
+                                )
+                            }
                         }
                     }
 

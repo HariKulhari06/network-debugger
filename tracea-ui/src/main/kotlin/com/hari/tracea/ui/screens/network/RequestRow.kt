@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hari.tracea.core.model.NetworkEvent
+import com.hari.tracea.core.model.isMocked
 import com.hari.tracea.core.util.DurationFormatter
 import com.hari.tracea.core.util.SizeFormatter
 import com.hari.tracea.ui.components.MethodBadge
@@ -71,7 +72,20 @@ fun RequestRow(
                 Spacer(modifier = Modifier.width(8.dp))
                 
                 event.statusCode?.let { code ->
-                    StatusBadge(statusCode = code)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (event.isMocked) {
+                            Text(
+                                text = "🎭 MOCK",
+                                color = colors.sectionHeader,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        StatusBadge(statusCode = code)
+                    }
                 }
             }
 

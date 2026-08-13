@@ -7,6 +7,7 @@ import com.hari.tracea.core.model.MockRule
 import com.hari.tracea.ui.TraceaServiceLocator
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -58,5 +59,16 @@ class MockRulesViewModel : ViewModel() {
                 MockEngine.updateRule(rule.copy(enabled = enabled))
             }
         }
+    }
+
+    suspend fun getResponseBodyForPath(path: String): String? {
+        val store = TraceaServiceLocator.store ?: return null
+        val events = store.getAll().firstOrNull() ?: return null
+        // Find the latest completed event with this path that has text body
+        val event = events.firstOrNull { 
+            it.path == path && 
+            it.responseBody is com.hari.tracea.core.model.BodyData.Text 
+        }
+        return (event?.responseBody as? com.hari.tracea.core.model.BodyData.Text)?.content
     }
 }

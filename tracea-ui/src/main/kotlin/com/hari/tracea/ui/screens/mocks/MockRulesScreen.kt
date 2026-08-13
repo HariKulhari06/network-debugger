@@ -53,6 +53,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +74,7 @@ import com.hari.tracea.ui.components.MethodBadge
 import com.hari.tracea.ui.components.StatusBadge
 import com.hari.tracea.ui.theme.LocalDebuggerColors
 import java.util.UUID
+import kotlinx.coroutines.launch
 
 /**
  * Screen displaying the Mock Rules list and rule creation/editing tools.
@@ -225,6 +227,7 @@ fun MockRulesScreen(
                     rule = rule,
                     isNew = isNewRule,
                     capturedPaths = capturedPaths,
+                    onImportPayload = { path -> viewModel.getResponseBodyForPath(path) },
                     onDismiss = { showEditorDialog = null },
                     onSave = { updatedRule ->
                         if (isNewRule) {
@@ -322,10 +325,12 @@ private fun MockRuleEditorDialog(
     rule: MockRule,
     isNew: Boolean,
     capturedPaths: List<String>,
+    onImportPayload: suspend (String) -> String?,
     onDismiss: () -> Unit,
     onSave: (MockRule) -> Unit
 ) {
     val colors = LocalDebuggerColors.current
+    val coroutineScope = rememberCoroutineScope()
 
     var pathPattern by remember { mutableStateOf(rule.pathPattern) }
     var selectedMethod by remember { mutableStateOf(rule.method) }
@@ -527,13 +532,61 @@ private fun MockRuleEditorDialog(
                     )
                 }
 
-                // Response body payload
-                Text(
-                    text = "RESPONSE PAYLOAD (JSON/TEXT)",
-                    color = colors.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "RESPONSE PAYLOAD (JSON/TEXT)",
+                        color = colors.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Format",
+                            color = colors.primary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable {
+                                try {
+                                    val trimmed = responseBody.trim()
+                                    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+                                        val parsed = kotlinx.serialization.json.Json.parseToJsonElement(trimmed)
+                                        responseBody = kotlinx.serialization.json.Json { prettyPrint = true }.encodeToString(
+                                            kotlinx.serialization.json.JsonElement.serializer(),
+                                            parsed
+                                        )
+                                    }
+                                } catch (e: Exception) {
+                                    // Ignore
+                                }
+                            }
+                        )
+
+                        if (pathPattern.isNotBlank()) {
+                            Text(
+                                text = "Import Latest",
+                                color = colors.primary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable {
+                                    coroutineScope.launch {
+                                        val latestBody = onImportPayload(pathPattern.trim())
+                                        if (latestBody != null) {
+                                            responseBody = latestBody
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
                 OutlinedTextField(
                     value = responseBody,
                     onValueChange = { responseBody = it },

@@ -55,7 +55,7 @@ Add the library dependency to your app module's `build.gradle.kts`:
 ```kotlin
 dependencies {
     // Enable Tracea only in debug builds
-    debugImplementation("com.github.HariKulhari06:tracea:1.0.0")
+    debugImplementation("com.github.HariKulhari06:tracea:1.0.2")
 }
 ```
 

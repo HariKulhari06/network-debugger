@@ -35,12 +35,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            network-debugger/build/outputs/aar/*.aar
-            network-debugger-core/build/outputs/aar/*.aar
-            network-debugger-okhttp/build/outputs/aar/*.aar
-            network-debugger-manual/build/outputs/aar/*.aar
-            network-debugger-storage/build/outputs/aar/*.aar
-            network-debugger-ui/build/outputs/aar/*.aar
+            tracea/build/outputs/aar/*.aar
+            tracea-core/build/outputs/aar/*.aar
+            tracea-okhttp/build/outputs/aar/*.aar
+            tracea-manual/build/outputs/aar/*.aar
+            tracea-storage/build/outputs/aar/*.aar
+            tracea-ui/build/outputs/aar/*.aar
           draft: false
           prerelease: false
         env:

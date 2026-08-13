@@ -1,5 +1,9 @@
 # 📡 Tracea for Android
 
+<p align="center">
+  <img src="logo.png" width="180" alt="Tracea Logo"/>
+</p>
+
 [![JitPack](https://jitpack.io/v/HariKulhari06/tracea.svg)](https://jitpack.io/#HariKulhari06/tracea)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android-green.svg)](https://developer.android.com)

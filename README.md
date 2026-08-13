@@ -1,46 +1,43 @@
-# 📡 Tracea for Android
+# 📡 Tracea
 
 <p align="center">
-  <img src="logo.png" width="180" alt="Tracea Logo"/>
+  <img src="logo.png" width="160" alt="Tracea Logo"/>
 </p>
 
-[![JitPack](https://jitpack.io/v/HariKulhari06/tracea.svg)](https://jitpack.io/#HariKulhari06/tracea)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Android-green.svg)](https://developer.android.com)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-purple.svg)](https://kotlinlang.org)
+<p align="center">
+  <a href="https://jitpack.io/#HariKulhari06/tracea"><img src="https://jitpack.io/v/HariKulhari06/tracea.svg" alt="JitPack"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License"/></a>
+  <a href="https://developer.android.com"><img src="https://img.shields.io/badge/Platform-Android-green.svg" alt="Platform"/></a>
+  <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-2.1.20-purple.svg" alt="Kotlin"/></a>
+</p>
 
-**Tracea** is a lightweight, Chrome DevTools / Proxyman-style in-app network inspection SDK embedded directly inside your **Android** application.
-
-It automatically intercepts network calls made via **OkHttp**, provides a **manual capture API** for custom network stacks, redacts sensitive headers and JSON payloads, persists history via Room DB, and displays a Jetpack Compose developer-friendly dark-theme UI.
+**Tracea** is a modern, high-performance in-app network debugger for Android. Inspired by tools like Proxyman and Charles, it provides a seamless way to inspect, mock, and analyze network traffic directly within your application.
 
 ---
 
-## 📱 Screenshots & Demo Video
+## 📱 Visual Overview
 
-| Network Event Inspector | Request Details & cURL |
-| :---: | :---: |
-| <img src="screenshot/network_list.png" width="360" alt="Network List Screen"/> | <img src="screenshot/request_detail.png" width="360" alt="Request Detail Screen"/> |
-
-> 📹 **Video File**: [`screenshot/demo.mp4`](screenshot/demo.mp4)
+| Network Inspector | Mocking Rules | Detailed Analysis |
+| :---: | :---: | :---: |
+| <img src="screenshot/Screenshot_20260813_093825.png" width="280" alt="Network List"/> | <img src="screenshot/Screenshot_20260813_093838.png" width="280" alt="Mock Rules"/> | <img src="screenshot/Screenshot_20260813_093900.png" width="280" alt="Request Detail"/> |
 
 ---
 
 ## ✨ Features
 
-- 🔍 **Network Inspection** — View all HTTP requests/responses in real-time
-- 🎭 **Mock Rules** — Define mock responses with path matching, status codes, and delays
-- 🔒 **Redaction** — Automatically redact sensitive headers and JSON fields
-- 📋 **cURL Export** — Copy any request as a cURL command
-- 📊 **HAR Export** — Export network sessions in HAR format
-- ⏱️ **Timing Details** — DNS, connect, TLS, waiting, and download breakdowns
-- 🎨 **Dark Theme UI** — Premium Jetpack Compose interface
-- 🔌 **Manual Capture API** — Support for non-OkHttp network stacks
+- 🔍 **Real-time Inspection** — Monitor HTTP/HTTPS traffic with deep request/response analysis.
+- 🎭 **Dynamic Mocking** — Intercept and modify responses with path matching, status codes, and custom delays.
+- 🔒 **Privacy First** — Built-in redaction for sensitive headers and JSON keys (auth tokens, passwords, etc.).
+- 📋 **Developer Tools** — Export to **cURL** or **HAR** format for easy debugging in external tools.
+- ⏱️ **Precision Timing** — Detailed breakdown of DNS, TLS handshake, and transfer times.
+- 🎨 **Modern UI** — A premium, minimalist dark-theme interface built entirely with Jetpack Compose.
+- 🔌 **Universal Support** — First-class OkHttp integration + Manual Capture API for any network stack.
 
 ---
 
 ## 📦 Installation
 
-Add **JitPack** to your project's `settings.gradle.kts`:
+Add **JitPack** to your `settings.gradle.kts`:
 
 ```kotlin
 dependencyResolutionManagement {
@@ -52,41 +49,32 @@ dependencyResolutionManagement {
 }
 ```
 
-Add the dependency to your app module's `build.gradle.kts`:
+Add the dependency to your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    // Pure native Android SDK
     debugImplementation("com.github.HariKulhari06:tracea:1.0.0")
 }
 ```
 
 ---
 
-## 🚀 Quickstart Guide
+## 🚀 Quick Start
 
-### 1. Initialize in Application Class
-
+### 1. Initialize
 ```kotlin
-class DemoApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-
-        Tracea.initialize(
-            context = this,
-            config = TraceaConfig(
-                enabled = BuildConfig.DEBUG,
-                showFloatingButton = true
-            )
-        )
-    }
-}
+Tracea.initialize(
+    context = this,
+    config = TraceaConfig(
+        enabled = BuildConfig.DEBUG,
+        showFloatingButton = true
+    )
+)
 ```
 
-### 2. Attach Interceptor to OkHttpClient
-
+### 2. Plug and Play (OkHttp)
 ```kotlin
-val okHttpClient = OkHttpClient.Builder()
+val client = OkHttpClient.Builder()
     .addInterceptor(Tracea.interceptor)
     .eventListenerFactory(Tracea.timingEventListenerFactory)
     .build()
@@ -94,59 +82,26 @@ val okHttpClient = OkHttpClient.Builder()
 
 ---
 
-## ✍️ Manual Capture API
-
-For networking stacks that cannot use OkHttp interceptors (e.g., custom sockets, WebSockets, or legacy HTTPURLConnection):
+## 🛡️ Advanced: Manual Capture
+For non-OkHttp stacks (WebSockets, legacy libraries, or custom sockets):
 
 ```kotlin
-val manualCall = Tracea.startManualRequest(
-    method = "POST",
-    url = "https://api.example.com/v1/checkout"
-)
-
-manualCall.requestHeaders(mapOf("Authorization" to "Bearer token123"))
-         .requestBody("""{"item_id": 42, "quantity": 1}""", "application/json")
-
-// On response received:
-manualCall.response(
-    statusCode = 200,
-    headers = mapOf("Content-Type" to "application/json"),
-    body = """{"status": "success", "order_id": "ORD-9912"}""",
-    contentType = "application/json"
-)
+val call = Tracea.startManualRequest("POST", "https://api.example.com/v1")
+call.requestHeaders(mapOf("Auth" to "redacted"))
+    .response(200, body = "{\"status\":\"ok\"}")
 ```
 
 ---
 
-## 🛠 Project Architecture
+## 🏗️ Architecture
 
-```text
-tracea/
-├── tracea/                  # 🤖 Native Android SDK Facade
-├── tracea-core/             # 🤖 Native Android Core Models & Pipeline
-├── tracea-okhttp/           # 🤖 Native Android OkHttp Interceptor
-├── tracea-manual/           # 🤖 Native Android Manual API
-├── tracea-storage/          # 🤖 Native Android Room Storage
-├── tracea-ui/               # 🤖 Native Android Jetpack Compose UI
-└── tracea-demo/             # 📱 Native Android Demo App
-```
+Tracea is built as a modular system for maximum flexibility:
+- **Core**: Logic, models, and processing pipeline.
+- **Storage**: Persistent history via Room DB.
+- **UI**: Modern Jetpack Compose debugging interface.
+- **Adapters**: specialized plugins for OkHttp and manual capturing.
 
 ---
 
 ## 📄 License
-
-```text
-Copyright 2026 Hari
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and limitations
-under the License.
-```
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.

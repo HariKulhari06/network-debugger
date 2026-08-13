@@ -1,6 +1,7 @@
 package com.hari.tracea.demo
 
 import com.hari.tracea.Tracea
+import com.hari.tracea.okHttpInterceptor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -17,17 +18,23 @@ class DemoApiService {
         .readTimeout(10, TimeUnit.SECONDS)
         .build()
 
-    private suspend fun executeRequest(request: Request): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            client.newCall(request).execute().use { response ->
-                if (response.isSuccessful) {
-                    Result.success(response.body?.string() ?: "")
-                } else {
-                    Result.failure(Exception("HTTP error ${response.code}"))
+    private suspend fun executeRequest(request: Request): Result<String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val call = client.newCall(request)
+                val response = call.execute()
+                try {
+                    if (response.isSuccessful) {
+                        Result.success(response.body?.string() ?: "")
+                    } else {
+                        Result.failure(Exception("HTTP error ${response.code}"))
+                    }
+                } finally {
+                    response.close()
                 }
+            } catch (e: Exception) {
+                Result.failure(e)
             }
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 

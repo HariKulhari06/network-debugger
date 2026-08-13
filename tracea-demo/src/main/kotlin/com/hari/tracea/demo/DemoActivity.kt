@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.hari.tracea.Tracea
+import com.hari.tracea.show
 import kotlinx.coroutines.launch
 
 class DemoActivity : ComponentActivity() {

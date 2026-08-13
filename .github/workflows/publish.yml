@@ -10,7 +10,8 @@ permissions:
   contents: write
 
 jobs:
-  publish:
+  publish-android:
+    name: Publish Android AAR
     runs-on: ubuntu-latest
 
     steps:
@@ -41,6 +42,41 @@ jobs:
             tracea-manual/build/outputs/aar/*.aar
             tracea-storage/build/outputs/aar/*.aar
             tracea-ui/build/outputs/aar/*.aar
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-ios:
+    name: Publish iOS XCFramework
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build iOS Release XCFramework
+        run: ./gradlew :tracea:assembleTraceaReleaseXCFramework --stacktrace
+
+      - name: Compress XCFramework
+        run: |
+          cd tracea/build/XCFrameworks/release/
+          zip -r Tracea.xcframework.zip Tracea.xcframework
+
+      - name: Upload iOS Framework to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: tracea/build/XCFrameworks/release/Tracea.xcframework.zip
+          tag_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
         env:

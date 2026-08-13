@@ -6,6 +6,15 @@ plugins {
     `maven-publish`
 }
 
+val isXcodeAvailable: Boolean by lazy {
+    try {
+        val process = Runtime.getRuntime().exec(arrayOf("xcodebuild", "-version"))
+        process.waitFor() == 0
+    } catch (e: Exception) {
+        false
+    }
+}
+
 kotlin {
     androidTarget {
         publishLibraryVariants("release")
@@ -14,9 +23,11 @@ kotlin {
         }
     }
     
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+    if (isXcodeAvailable) {
+        iosX64()
+        iosArm64()
+        iosSimulatorArm64()
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -37,9 +48,12 @@ kotlin {
 dependencies {
     add("kspCommonMainMetadata", libs.room.compiler)
     add("kspAndroid", libs.room.compiler)
-    add("kspIosX64", libs.room.compiler)
-    add("kspIosArm64", libs.room.compiler)
-    add("kspIosSimulatorArm64", libs.room.compiler)
+    
+    if (isXcodeAvailable) {
+        add("kspIosX64", libs.room.compiler)
+        add("kspIosArm64", libs.room.compiler)
+        add("kspIosSimulatorArm64", libs.room.compiler)
+    }
 }
 
 android {

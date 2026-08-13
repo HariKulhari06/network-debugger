@@ -4,6 +4,15 @@ plugins {
     `maven-publish`
 }
 
+val isXcodeAvailable: Boolean by lazy {
+    try {
+        val process = Runtime.getRuntime().exec(arrayOf("xcodebuild", "-version"))
+        process.waitFor() == 0
+    } catch (e: Exception) {
+        false
+    }
+}
+
 kotlin {
     androidTarget {
         publishLibraryVariants("release")
@@ -12,9 +21,11 @@ kotlin {
         }
     }
     
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+    if (isXcodeAvailable) {
+        iosX64()
+        iosArm64()
+        iosSimulatorArm64()
+    }
 
     sourceSets {
         commonMain.dependencies {

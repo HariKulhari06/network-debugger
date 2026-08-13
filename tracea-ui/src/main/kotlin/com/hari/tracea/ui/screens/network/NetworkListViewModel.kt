@@ -18,6 +18,9 @@ class NetworkListViewModel : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
+    private val _isRegexEnabled = MutableStateFlow(false)
+    val isRegexEnabled: StateFlow<Boolean> = _isRegexEnabled
+
     private val _activeFilter = MutableStateFlow(StatusFilter.ALL)
     val activeFilter: StateFlow<StatusFilter> = _activeFilter
 
@@ -27,22 +30,33 @@ class NetworkListViewModel : ViewModel() {
     val events: StateFlow<List<NetworkEvent>> = combine(
         store?.getAll() ?: MutableStateFlow(emptyList()),
         _searchQuery,
+        _isRegexEnabled,
         _activeFilter
-    ) { allEvents, query, filter ->
+    ) { allEvents, query, regexEnabled, filter ->
         allEvents.filter { event ->
             val requestBodyText = (event.requestBody as? com.hari.tracea.core.model.BodyData.Text)?.content
             val responseBodyText = (event.responseBody as? com.hari.tracea.core.model.BodyData.Text)?.content
 
             // Filter by search query
-            val matchesQuery = query.isBlank() ||
-                    event.url.contains(query, ignoreCase = true) ||
-                    event.host.contains(query, ignoreCase = true) ||
-                    event.method.name.contains(query, ignoreCase = true) ||
-                    (event.statusCode?.toString()?.contains(query) == true) ||
-                    requestBodyText?.contains(query, ignoreCase = true) == true ||
-                    responseBodyText?.contains(query, ignoreCase = true) == true ||
-                    event.requestHeaders.any { (k, v) -> k.contains(query, ignoreCase = true) || v.any { it.contains(query, ignoreCase = true) } } ||
-                    event.responseHeaders.any { (k, v) -> k.contains(query, ignoreCase = true) || v.any { it.contains(query, ignoreCase = true) } }
+            val matchesQuery = if (query.isBlank()) {
+                true
+            } else if (regexEnabled) {
+                try {
+                    val regex = Regex(query, RegexOption.IGNORE_CASE)
+                    regex.containsMatchIn(event.path)
+                } catch (e: Exception) {
+                    event.path.contains(query, ignoreCase = true)
+                }
+            } else {
+                event.url.contains(query, ignoreCase = true) ||
+                        event.host.contains(query, ignoreCase = true) ||
+                        event.method.name.contains(query, ignoreCase = true) ||
+                        (event.statusCode?.toString()?.contains(query) == true) ||
+                        requestBodyText?.contains(query, ignoreCase = true) == true ||
+                        responseBodyText?.contains(query, ignoreCase = true) == true ||
+                        event.requestHeaders.any { (k, v) -> k.contains(query, ignoreCase = true) || v.any { it.contains(query, ignoreCase = true) } } ||
+                        event.responseHeaders.any { (k, v) -> k.contains(query, ignoreCase = true) || v.any { it.contains(query, ignoreCase = true) } }
+            }
 
             // Filter by status category
             val matchesFilter = when (filter) {
@@ -68,6 +82,10 @@ class NetworkListViewModel : ViewModel() {
         _searchQuery.value = query
     }
 
+    fun toggleRegex() {
+        _isRegexEnabled.value = !_isRegexEnabled.value
+    }
+
     fun setFilter(filter: StatusFilter) {
         _activeFilter.value = filter
     }
@@ -76,6 +94,7 @@ class NetworkListViewModel : ViewModel() {
         _isSearchVisible.value = !_isSearchVisible.value
         if (!_isSearchVisible.value) {
             _searchQuery.value = ""
+            _isRegexEnabled.value = false
         }
     }
 

@@ -61,6 +61,7 @@ fun NetworkListScreen(
     val events by viewModel.events.collectAsState()
     val totalCount by viewModel.totalCount.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val isRegexEnabled by viewModel.isRegexEnabled.collectAsState()
     val activeFilter by viewModel.activeFilter.collectAsState()
     val isSearchVisible by viewModel.isSearchVisible.collectAsState()
 
@@ -114,7 +115,9 @@ fun NetworkListScreen(
                     visible = isSearchVisible,
                     query = searchQuery,
                     onQueryChange = { viewModel.setSearchQuery(it) },
-                    onClose = { viewModel.toggleSearch() }
+                    onClose = { viewModel.toggleSearch() },
+                    isRegexEnabled = isRegexEnabled,
+                    onRegexToggle = { viewModel.toggleRegex() }
                 )
 
                 StatusFilterChips(

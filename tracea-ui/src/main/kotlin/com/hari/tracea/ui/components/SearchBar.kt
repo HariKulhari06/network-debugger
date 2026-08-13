@@ -41,7 +41,9 @@ fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isRegexEnabled: Boolean = false,
+    onRegexToggle: (() -> Unit)? = null
 ) {
     val colors = LocalDebuggerColors.current
     val focusManager = LocalFocusManager.current
@@ -82,7 +84,7 @@ fun SearchBar(
                 ) {
                     if (query.isEmpty()) {
                         Text(
-                            text = "Search transactions...",
+                            text = if (isRegexEnabled) "Regex endpoint path..." else "Search transactions...",
                             color = colors.onSurfaceVariant.copy(alpha = 0.5f),
                             fontSize = 14.sp
                         )
@@ -100,6 +102,19 @@ fun SearchBar(
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                         modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                if (onRegexToggle != null) {
+                    Text(
+                        text = ".*",
+                        color = if (isRegexEnabled) colors.primary else colors.onSurfaceVariant.copy(alpha = 0.5f),
+                        fontSize = 16.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable { onRegexToggle() }
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
 

@@ -12,10 +12,10 @@ import com.hari.tracea.core.model.NetworkSource
 import com.hari.tracea.core.model.DebuggerSession
 import com.hari.tracea.core.model.NetworkTiming
 import com.hari.tracea.core.pipeline.NetworkEventCollector
+import com.hari.tracea.core.util.currentTimeMillis
+import com.hari.tracea.manual.util.parseUrl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.net.URI
-import java.net.URLDecoder
 
 /**
  * Builder-style API for manually tracking a network call lifecycle.
@@ -42,7 +42,7 @@ class ManualNetworkCall internal constructor(
     private var responseContentType: String? = null
     private var responseSize: Long = 0L
     private var error: NetworkError? = null
-    private val startTime = System.currentTimeMillis()
+    private val startTime = currentTimeMillis()
     private var endTime: Long? = null
 
     /**
@@ -67,7 +67,7 @@ class ManualNetworkCall internal constructor(
      * @return This builder instance for chaining
      */
     fun requestBody(body: String, contentType: String? = null): ManualNetworkCall {
-        val bytes = body.toByteArray(Charsets.UTF_8)
+        val bytes = body.encodeToByteArray()
         this.requestSize = bytes.size.toLong()
         this.requestContentType = contentType
         val type = BodyContentType.fromContentType(contentType)
@@ -115,7 +115,7 @@ class ManualNetworkCall internal constructor(
         }
         this.responseContentType = contentType
         if (body != null) {
-            val bytes = body.toByteArray(Charsets.UTF_8)
+            val bytes = body.encodeToByteArray()
             this.responseSize = bytes.size.toLong()
             val type = BodyContentType.fromContentType(contentType)
             this.responseBody = if (config.bodyCaptureConfig.enabled) {
@@ -170,7 +170,7 @@ class ManualNetworkCall internal constructor(
     }
 
     private fun finishAndEmit() {
-        val now = System.currentTimeMillis()
+        val now = currentTimeMillis()
         this.endTime = now
 
         val parsedUrl = parseUrl(url)
@@ -214,50 +214,6 @@ class ManualNetworkCall internal constructor(
         }
     }
 
-    private fun parseUrl(url: String): ParsedUrl {
-        return try {
-            val uri = URI(url)
-            val scheme = uri.scheme.orEmpty()
-            val host = uri.host.orEmpty()
-            val port = if (uri.port != -1) uri.port else null
-            val path = uri.path.orEmpty()
-            val queryParams = parseQueryParams(uri.rawQuery)
-            ParsedUrl(scheme, host, port, path, queryParams)
-        } catch (e: Exception) {
-            ParsedUrl(
-                scheme = "",
-                host = "",
-                port = null,
-                path = url,
-                queryParameters = emptyMap()
-            )
-        }
-    }
-
-    private fun parseQueryParams(rawQuery: String?): Map<String, List<String>> {
-        if (rawQuery.isNullOrEmpty()) return emptyMap()
-        val map = mutableMapOf<String, MutableList<String>>()
-        rawQuery.split("&").forEach { param ->
-            if (param.isNotEmpty()) {
-                val parts = param.split("=", limit = 2)
-                val key = try {
-                    URLDecoder.decode(parts[0], "UTF-8")
-                } catch (e: Exception) {
-                    parts[0]
-                }
-                val value = if (parts.size > 1) {
-                    try {
-                        URLDecoder.decode(parts[1], "UTF-8")
-                    } catch (e: Exception) {
-                        parts[1]
-                    }
-                } else ""
-                map.getOrPut(key) { mutableListOf() }.add(value)
-            }
-        }
-        return map
-    }
-
     private fun getStatusMessage(statusCode: Int): String {
         return when (statusCode) {
             200 -> "OK"
@@ -282,12 +238,4 @@ class ManualNetworkCall internal constructor(
             else -> "HTTP $statusCode"
         }
     }
-
-    private data class ParsedUrl(
-        val scheme: String,
-        val host: String,
-        val port: Int?,
-        val path: String,
-        val queryParameters: Map<String, List<String>>
-    )
 }

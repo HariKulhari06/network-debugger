@@ -3,10 +3,10 @@ package com.hari.tracea.manual
 import com.hari.tracea.core.config.TraceaConfig
 import com.hari.tracea.core.model.HttpMethod
 import com.hari.tracea.core.pipeline.NetworkEventCollector
+import com.hari.tracea.core.util.generateUuid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import java.util.UUID
 
 /**
  * Entry point API for manually capturing network calls.
@@ -18,7 +18,7 @@ class ManualCaptureApi(
     private val collector: NetworkEventCollector,
     private val config: TraceaConfig
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     /**
      * Starts tracking a manual network request.
@@ -28,7 +28,7 @@ class ManualCaptureApi(
      * @return A builder [ManualNetworkCall] instance to record request and response details
      */
     fun startRequest(method: String, url: String): ManualNetworkCall {
-        val id = UUID.randomUUID().toString()
+        val id = generateUuid()
         return ManualNetworkCall(
             id = id,
             method = HttpMethod.from(method),

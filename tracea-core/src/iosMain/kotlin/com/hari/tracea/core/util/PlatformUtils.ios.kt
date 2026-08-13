@@ -77,3 +77,20 @@ actual fun formatIsoDateTime(timestamp: Long): String {
     val date = NSDate(timeIntervalSinceReferenceDate = timeIntervalSince2001)
     return formatter.stringFromDate(date)
 }
+
+@OptIn(ExperimentalForeignApi::class)
+actual fun deleteFile(dirPath: String, fileName: String): Boolean {
+    val filePath = "$dirPath/$fileName"
+    if (!NSFileManager.defaultManager.fileExistsAtPath(filePath)) return false
+    return NSFileManager.defaultManager.removeItemAtPath(filePath, null)
+}
+
+@OptIn(ExperimentalForeignApi::class)
+actual fun deleteDirectoryContents(dirPath: String) {
+    val fileManager = NSFileManager.defaultManager
+    val contents = fileManager.contentsOfDirectoryAtPath(dirPath, null) as? List<String> ?: return
+    for (item in contents) {
+        val filePath = "$dirPath/$item"
+        fileManager.removeItemAtPath(filePath, null)
+    }
+}

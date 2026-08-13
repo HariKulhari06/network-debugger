@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "network_events")
-internal data class NetworkEventEntity(
+data class NetworkEventEntity(
     @PrimaryKey val id: String,
     val timestamp: Long,
     val method: String,

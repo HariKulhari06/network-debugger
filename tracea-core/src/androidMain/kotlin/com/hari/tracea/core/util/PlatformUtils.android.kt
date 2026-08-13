@@ -66,3 +66,13 @@ actual fun formatIsoDateTime(timestamp: Long): String {
     }
     return format.format(java.util.Date(timestamp))
 }
+
+actual fun deleteFile(dirPath: String, fileName: String): Boolean {
+    val file = java.io.File(dirPath, fileName)
+    return if (file.exists()) file.delete() else false
+}
+
+actual fun deleteDirectoryContents(dirPath: String) {
+    val dir = java.io.File(dirPath)
+    dir.listFiles()?.forEach { it.delete() }
+}

@@ -8,6 +8,9 @@ plugins {
 kotlin {
     androidTarget {
         publishLibraryVariants("release")
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
     
     iosX64()

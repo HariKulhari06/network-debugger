@@ -11,3 +11,5 @@ expect fun readTextFromFile(dirPath: String, fileName: String): String?
 expect fun currentTimeMillis(): Long
 expect fun mapThrowableToNetworkError(throwable: Throwable): NetworkError
 expect fun formatIsoDateTime(timestamp: Long): String
+expect fun deleteFile(dirPath: String, fileName: String): Boolean
+expect fun deleteDirectoryContents(dirPath: String)

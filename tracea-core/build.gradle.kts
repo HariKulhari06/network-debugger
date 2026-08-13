@@ -1,8 +1,32 @@
 plugins {
+    alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     `maven-publish`
+}
+
+kotlin {
+    androidTarget {
+        publishLibraryVariants("release")
+    }
+    
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.coroutines.core)
+            implementation(libs.serialization.json)
+        }
+        androidMain.dependencies {
+            implementation(libs.coroutines.android)
+            implementation(libs.core.ktx)
+        }
+        commonTest.dependencies {
+            implementation(libs.junit)
+        }
+    }
 }
 
 android {
@@ -17,31 +41,4 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-        }
-    }
-}
-
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            afterEvaluate {
-                from(components["release"])
-            }
-        }
-    }
-}
-
-dependencies {
-    implementation(libs.coroutines.core)
-    implementation(libs.coroutines.android)
-    implementation(libs.serialization.json)
-    implementation(libs.core.ktx)
-    
-    testImplementation(libs.junit)
 }

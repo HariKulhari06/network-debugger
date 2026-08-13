@@ -9,7 +9,7 @@ import com.hari.tracea.core.model.NetworkEvent
 object CurlGenerator {
     
     fun generate(event: NetworkEvent): String {
-        val builder = java.lang.StringBuilder("curl -X ${event.method.name}")
+        val builder = StringBuilder("curl -X ${event.method.name}")
         
         event.requestHeaders.forEach { (name, values) ->
             values.forEach { value ->

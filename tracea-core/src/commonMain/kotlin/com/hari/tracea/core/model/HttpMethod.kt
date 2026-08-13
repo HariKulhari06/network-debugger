@@ -1,7 +1,5 @@
 package com.hari.tracea.core.model
 
-import java.util.Locale
-
 /**
  * HTTP methods.
  */
@@ -14,7 +12,7 @@ enum class HttpMethod {
          */
         fun from(method: String): HttpMethod {
             return try {
-                valueOf(method.uppercase(Locale.ROOT))
+                valueOf(method.uppercase())
             } catch (e: IllegalArgumentException) {
                 UNKNOWN
             }

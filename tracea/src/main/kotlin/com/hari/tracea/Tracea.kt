@@ -45,7 +45,7 @@ object Tracea {
         _store = RoomNetworkEventStore(context, config.storageConfig)
         _manualApi = ManualCaptureApi(_collector, config)
         
-        com.hari.tracea.core.mock.MockEngine.initialize(context)
+        com.hari.tracea.core.mock.MockEngine.initialize(com.hari.tracea.core.util.getFilesDirPath(context))
         
         // Set up the UI service locator
         TraceaServiceLocator.store = _store

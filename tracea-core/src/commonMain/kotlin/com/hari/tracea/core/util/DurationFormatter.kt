@@ -1,5 +1,7 @@
 package com.hari.tracea.core.util
 
+import kotlin.math.round
+
 /**
  * Formats durations in milliseconds.
  */
@@ -9,7 +11,7 @@ object DurationFormatter {
             ms < 1000 -> "$ms ms"
             ms < 60000 -> {
                 val sec = ms / 1000.0
-                String.format(java.util.Locale.US, "%.2f s", sec)
+                "${round(sec * 100.0) / 100.0} s"
             }
             else -> {
                 val minutes = ms / 60000

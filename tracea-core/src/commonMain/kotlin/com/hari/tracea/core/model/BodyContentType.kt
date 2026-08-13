@@ -1,7 +1,5 @@
 package com.hari.tracea.core.model
 
-import java.util.Locale
-
 /**
  * Broad categories of content types.
  */
@@ -14,7 +12,7 @@ enum class BodyContentType {
          */
         fun fromContentType(contentType: String?): BodyContentType {
             if (contentType == null) return UNKNOWN
-            val lower = contentType.lowercase(Locale.ROOT)
+            val lower = contentType.lowercase()
             return when {
                 lower.contains("json") -> JSON
                 lower.contains("xml") -> XML

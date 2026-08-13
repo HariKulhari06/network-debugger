@@ -5,19 +5,11 @@ import com.hari.tracea.core.model.NetworkEvent
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 
 /**
  * Utility to export a list of [NetworkEvent]s to standard HTTP Archive (HAR) format.
  */
 public object HarExporter {
-
-    private val isoDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
-        timeZone = TimeZone.getTimeZone("UTC")
-    }
 
     /**
      * Converts the list of network events into a HAR JSON string.
@@ -33,7 +25,7 @@ public object HarExporter {
                 put("entries", buildJsonArray {
                     events.forEach { event ->
                         add(buildJsonObject {
-                            val startedDateTime = isoDateFormat.format(Date(event.timestamp))
+                            val startedDateTime = formatIsoDateTime(event.timestamp)
                             put("startedDateTime", startedDateTime)
                             val totalTime = event.timing.totalMs ?: 0L
                             put("time", totalTime.toDouble())

@@ -8,15 +8,13 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import java.util.Locale
-
 /**
  * Handles redaction of sensitive data from network events.
  */
 class RedactionEngine(private val config: RedactionConfig) {
     
-    private val sensitiveHeadersLower = config.sensitiveHeaders.map { it.lowercase(Locale.ROOT) }.toSet()
-    private val sensitiveJsonFieldsLower = config.sensitiveJsonFields.map { it.lowercase(Locale.ROOT) }.toSet()
+    private val sensitiveHeadersLower = config.sensitiveHeaders.map { it.lowercase() }.toSet()
+    private val sensitiveJsonFieldsLower = config.sensitiveJsonFields.map { it.lowercase() }.toSet()
 
     /**
      * Redacts sensitive headers.
@@ -24,7 +22,7 @@ class RedactionEngine(private val config: RedactionConfig) {
     fun redactHeaders(headers: Map<String, List<String>>): Map<String, List<String>> {
         val redacted = mutableMapOf<String, List<String>>()
         for ((key, value) in headers) {
-            if (sensitiveHeadersLower.contains(key.lowercase(Locale.ROOT))) {
+            if (sensitiveHeadersLower.contains(key.lowercase())) {
                 redacted[key] = value.map { config.replacementString }
             } else {
                 redacted[key] = value
@@ -51,7 +49,7 @@ class RedactionEngine(private val config: RedactionConfig) {
         return when (element) {
             is JsonObject -> {
                 val redactedMap = element.mapValues { (key, value) ->
-                    if (sensitiveJsonFieldsLower.contains(key.lowercase(Locale.ROOT))) {
+                    if (sensitiveJsonFieldsLower.contains(key.lowercase())) {
                         JsonPrimitive(config.replacementString)
                     } else {
                         redactElement(value)

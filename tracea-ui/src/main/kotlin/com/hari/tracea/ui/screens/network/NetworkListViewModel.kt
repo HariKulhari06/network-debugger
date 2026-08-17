@@ -30,19 +30,8 @@ class NetworkListViewModel : ViewModel() {
         _activeFilter
     ) { allEvents, query, filter ->
         allEvents.filter { event ->
-            val requestBodyText = (event.requestBody as? com.hari.tracea.core.model.BodyData.Text)?.content
-            val responseBodyText = (event.responseBody as? com.hari.tracea.core.model.BodyData.Text)?.content
-
-            // Filter by search query
-            val matchesQuery = query.isBlank() ||
-                    event.url.contains(query, ignoreCase = true) ||
-                    event.host.contains(query, ignoreCase = true) ||
-                    event.method.name.contains(query, ignoreCase = true) ||
-                    (event.statusCode?.toString()?.contains(query) == true) ||
-                    requestBodyText?.contains(query, ignoreCase = true) == true ||
-                    responseBodyText?.contains(query, ignoreCase = true) == true ||
-                    event.requestHeaders.any { (k, v) -> k.contains(query, ignoreCase = true) || v.any { it.contains(query, ignoreCase = true) } } ||
-                    event.responseHeaders.any { (k, v) -> k.contains(query, ignoreCase = true) || v.any { it.contains(query, ignoreCase = true) } }
+            // Simple path/URL contains search
+            val matchesQuery = query.isBlank() || event.url.contains(query, ignoreCase = true)
 
             // Filter by status category
             val matchesFilter = when (filter) {

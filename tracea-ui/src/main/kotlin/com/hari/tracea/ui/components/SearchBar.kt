@@ -82,7 +82,7 @@ fun SearchBar(
                 ) {
                     if (query.isEmpty()) {
                         Text(
-                            text = "Search transactions...",
+                            text = "Search by path (e.g. /api/v1)...",
                             color = colors.onSurfaceVariant.copy(alpha = 0.5f),
                             fontSize = 14.sp
                         )
@@ -127,7 +127,7 @@ fun SearchBar(
                     .clip(RoundedCornerShape(4.dp))
                     .clickable { 
                         onQueryChange("")
-                        onClose() 
+                        onClose()
                     }
                     .padding(4.dp)
             )

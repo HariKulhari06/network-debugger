@@ -130,17 +130,25 @@ object TraceaWebServer {
                     // 6. Export HAR
                     get("/api/export/har") {
                         val singleId = call.parameters["id"]
-                        val events = if (singleId != null) {
-                            val event = store?.get(singleId)
-                            if (event != null) listOf(event) else emptyList()
-                        } else {
-                            store?.getAll()?.first() ?: emptyList()
+                        val sessionId = call.parameters["sessionId"]
+                        val all = store?.getAll()?.first() ?: emptyList()
+
+                        val events = when {
+                            singleId != null -> {
+                                val event = store?.get(singleId)
+                                if (event != null) listOf(event) else emptyList()
+                            }
+                            sessionId != null -> {
+                                all.filter { it.sessionId == sessionId || it.sessionName == sessionId }
+                            }
+                            else -> all
                         }
 
                         val harString = HarExporter.exportToHarString(events)
+                        val filename = if (sessionId != null) "tracea_session_${System.currentTimeMillis()}.har" else "tracea_export_${System.currentTimeMillis()}.har"
                         call.response.header(
                             HttpHeaders.ContentDisposition,
-                            "attachment; filename=\"tracea_export_${System.currentTimeMillis()}.har\""
+                            "attachment; filename=\"$filename\""
                         )
                         call.respondText(harString, ContentType.Application.Json)
                     }

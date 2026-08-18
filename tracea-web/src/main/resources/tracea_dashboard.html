@@ -63,7 +63,7 @@
         .search-row { display: flex; gap: 8px; align-items: center; }
         .search-box { flex: 1; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 7px; padding: 7px 12px; color: var(--text-main); font-size: 12px; outline: none; transition: border-color 0.15s; }
         .search-box:focus { border-color: var(--primary); }
-        .sort-select { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 7px; padding: 6px 8px; font-size: 11px; font-weight: 600; outline: none; cursor: pointer; }
+        .select-filter { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 7px; padding: 6px 8px; font-size: 11px; font-weight: 600; outline: none; cursor: pointer; max-width: 140px; }
 
         .filter-row { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; }
         .filter-chip { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color); padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.15s; white-space: nowrap; }
@@ -72,6 +72,18 @@
         .filter-chip.error.active { background: var(--accent-red); border-color: var(--accent-red); }
 
         .request-list { flex: 1; overflow-y: auto; }
+        
+        /* Session Header */
+        .session-group-header { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: #181C2C; border-bottom: 1px solid var(--border-color); border-top: 1px solid var(--border-color); font-size: 11.5px; font-weight: 700; color: var(--accent-purple); position: sticky; top: 0; z-index: 5; }
+        .session-group-header:first-child { border-top: none; }
+        .session-left-info { display: flex; align-items: center; gap: 6px; overflow: hidden; cursor: pointer; }
+        .session-caret { font-size: 9px; color: var(--text-muted); transition: transform 0.15s; user-select: none; width: 12px; text-align: center; }
+        .session-caret.collapsed { transform: rotate(-90deg); }
+        .session-name-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .session-count-tag { background: var(--bg-card); color: var(--text-muted); padding: 1px 6px; border-radius: 8px; font-size: 10px; font-family: ui-monospace, monospace; border: 1px solid var(--border-color); }
+        .session-export-link { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 2px 7px; border-radius: 4px; font-size: 10.5px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
+        .session-export-link:hover { color: var(--primary); border-color: var(--primary); }
+
         .request-row { padding: 9px 14px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background 0.1s; display: flex; flex-direction: column; gap: 4px; }
         .request-row:hover { background: var(--bg-card-hover); }
         .request-row.selected { background: var(--bg-card-active); border-left: 3px solid var(--primary); padding-left: 11px; }
@@ -193,23 +205,26 @@
         </div>
         <div class="header-actions">
             <span style="font-size: 12px; color: var(--text-muted); font-family: ui-monospace, monospace;" id="req-counter">0 transactions</span>
-            <button class="nav-btn" onclick="exportFullHar()">📦 Export Session HAR</button>
+            <button class="nav-btn" onclick="exportFullHar()">📦 Export Full HAR</button>
             <button class="nav-btn danger-btn" onclick="clearAllRequests()">🗑️ Clear Traffic</button>
         </div>
     </header>
 
     <main>
-        <!-- Left Pane: Transactions Stream Table -->
+        <!-- Left Pane: Transactions Stream Table with Session Splits -->
         <section class="left-pane">
             <div class="toolbar">
                 <div class="search-row">
                     <input type="text" id="search-input" class="search-box" placeholder="Filter by URL, host, method..." oninput="renderList()">
-                    <select id="sort-select" class="sort-select" onchange="renderList()">
-                        <option value="newest">🕒 Newest First</option>
-                        <option value="oldest">🕒 Oldest First</option>
+                    <select id="session-select" class="select-filter" onchange="renderList()">
+                        <option value="ALL">📅 All Sessions</option>
+                    </select>
+                    <select id="sort-select" class="select-filter" onchange="renderList()">
+                        <option value="newest">🕒 Newest</option>
+                        <option value="oldest">🕒 Oldest</option>
                         <option value="slowest">⏱️ Slowest</option>
-                        <option value="largest">💾 Largest Size</option>
-                        <option value="status">🚦 Status Code</option>
+                        <option value="largest">💾 Largest</option>
+                        <option value="status">🚦 Status</option>
                     </select>
                 </div>
                 <div class="filter-row">
@@ -222,7 +237,7 @@
                 </div>
             </div>
             <div class="request-list" id="request-list-container">
-                <!-- Dynamically injected rows -->
+                <!-- Dynamically injected grouped rows -->
             </div>
         </section>
 
@@ -292,6 +307,7 @@
         let selectedEvent = null;
         let activeFilter = 'ALL';
         let currentTab = 'overview';
+        let collapsedSessions = {};
         let ws = null;
 
         function initWebSocket() {
@@ -309,6 +325,7 @@
                     const data = JSON.parse(event.data);
                     if (Array.isArray(data)) {
                         allEvents = data;
+                        updateSessionDropdown();
                         renderList();
                         if (selectedEvent) {
                             const updated = allEvents.find(e => e.id === selectedEvent.id);
@@ -329,9 +346,28 @@
                 .then(res => res.json())
                 .then(data => {
                     allEvents = data || [];
+                    updateSessionDropdown();
                     renderList();
                 })
                 .catch(e => console.error(e));
+        }
+
+        function updateSessionDropdown() {
+            const select = document.getElementById('session-select');
+            const currentSelected = select.value;
+            const sessionsMap = {};
+
+            allEvents.forEach(e => {
+                const sName = e.sessionName || e.sessionId || 'Default Session';
+                sessionsMap[sName] = (sessionsMap[sName] || 0) + 1;
+            });
+
+            let optionsHtml = '<option value="ALL">📅 All Sessions (' + allEvents.length + ')</option>';
+            for (const [name, count] of Object.entries(sessionsMap)) {
+                optionsHtml += '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + ' (' + count + ')</option>';
+            }
+            select.innerHTML = optionsHtml;
+            select.value = currentSelected || 'ALL';
         }
 
         function setFilter(filter, el) {
@@ -343,12 +379,16 @@
 
         function renderList() {
             const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const sessionFilter = document.getElementById('session-select').value;
             const sortBy = document.getElementById('sort-select').value;
             const container = document.getElementById('request-list-container');
             document.getElementById('req-counter').textContent = allEvents.length + ' transactions';
 
             let filtered = allEvents.filter(function(e) {
                 const matchesQuery = !query || e.url.toLowerCase().indexOf(query) >= 0 || (e.method && e.method.toLowerCase().indexOf(query) >= 0);
+                const sName = e.sessionName || e.sessionId || 'Default Session';
+                const matchesSession = sessionFilter === 'ALL' || sName === sessionFilter;
+
                 const code = e.statusCode || 0;
                 let matchesFilter = true;
                 if (activeFilter === '2xx') matchesFilter = code >= 200 && code < 300;
@@ -356,7 +396,7 @@
                 else if (activeFilter === '4xx') matchesFilter = code >= 400 && code < 500;
                 else if (activeFilter === '5xx') matchesFilter = code >= 500 && code < 600;
                 else if (activeFilter === 'ERRORS') matchesFilter = code >= 400 || !!e.error;
-                return matchesQuery && matchesFilter;
+                return matchesQuery && matchesSession && matchesFilter;
             });
 
             filtered.sort(function(a, b) {
@@ -377,37 +417,75 @@
                 return;
             }
 
-            container.innerHTML = filtered.map(function(e) {
-                const isSelected = selectedEvent && selectedEvent.id === e.id;
-                const methodClass = 'badge-' + (e.method ? e.method.toLowerCase() : 'get');
-                const isMock = e.responseHeaders && (e.responseHeaders['X-Mocked-By'] || e.responseHeaders['x-mocked-by']);
-                
-                let statusClass = 'status-2xx';
-                const code = e.statusCode || 0;
-                if (code >= 500 || e.error) statusClass = 'status-5xx';
-                else if (code >= 400) statusClass = 'status-4xx';
-                else if (code >= 300) statusClass = 'status-3xx';
+            // Group filtered events by session
+            const groups = {};
+            filtered.forEach(e => {
+                const sName = e.sessionName || e.sessionId || 'Default Session';
+                if (!groups[sName]) groups[sName] = [];
+                groups[sName].push(e);
+            });
 
-                const durationVal = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? (e.timing.endTimestamp - e.timing.startTimestamp) : null);
-                const durationText = durationVal !== null ? durationVal + ' ms' : '-';
-                const sizeText = formatBytes(e.responseSize || 0);
-                const timeText = new Date(e.timestamp).toLocaleTimeString();
+            let finalHtml = '';
+            for (const [sName, items] of Object.entries(groups)) {
+                const isCollapsed = collapsedSessions[sName] === true;
+                const countText = items.length === 1 ? '1 request' : items.length + ' requests';
 
-                return '<div class="request-row ' + (isSelected ? 'selected' : '') + '" onclick="selectRequest(\'' + e.id + '\')">' +
-                    '<div class="row-line-1">' +
-                        '<div class="row-left">' +
-                            (isMock ? '<span class="status-mock">MOCK</span>' : '') +
-                            '<span class="badge ' + methodClass + '">' + (e.method || 'GET') + '</span>' +
-                            '<span class="row-path" title="' + escapeHtml(e.url) + '">' + escapeHtml(e.path || e.url) + '</span>' +
+                finalHtml += '<div class="session-group-wrapper" data-session="' + escapeHtml(sName) + '">' +
+                    '<div class="session-group-header">' +
+                        '<div class="session-left-info" onclick="toggleSessionGroup(\'' + escapeBackticks(sName) + '\')">' +
+                            '<span class="session-caret ' + (isCollapsed ? 'collapsed' : '') + '">▼</span>' +
+                            '<span class="session-name-label">' + escapeHtml(sName) + '</span>' +
+                            '<span class="session-count-tag">' + countText + '</span>' +
                         '</div>' +
-                        '<span class="status-pill-badge ' + statusClass + '">' + (code > 0 ? code : (e.error ? 'ERR' : '...')) + '</span>' +
+                        '<button class="session-export-link" onclick="exportSessionHar(\'' + escapeBackticks(sName) + '\')">📦 Export HAR</button>' +
                     '</div>' +
-                    '<div class="row-line-2">' +
-                        '<span>' + escapeHtml(e.host || '') + '</span>' +
-                        '<span>' + timeText + ' &bull; ' + durationText + ' &bull; ' + sizeText + '</span>' +
-                    '</div>' +
-                '</div>';
-            }).join('');
+                    '<div class="session-items-container" style="display: ' + (isCollapsed ? 'none' : 'block') + ';">';
+
+                finalHtml += items.map(function(e) {
+                    const isSelected = selectedEvent && selectedEvent.id === e.id;
+                    const methodClass = 'badge-' + (e.method ? e.method.toLowerCase() : 'get');
+                    const isMock = e.responseHeaders && (e.responseHeaders['X-Mocked-By'] || e.responseHeaders['x-mocked-by']);
+                    
+                    let statusClass = 'status-2xx';
+                    const code = e.statusCode || 0;
+                    if (code >= 500 || e.error) statusClass = 'status-5xx';
+                    else if (code >= 400) statusClass = 'status-4xx';
+                    else if (code >= 300) statusClass = 'status-3xx';
+
+                    const durationVal = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? (e.timing.endTimestamp - e.timing.startTimestamp) : null);
+                    const durationText = durationVal !== null ? durationVal + ' ms' : '-';
+                    const sizeText = formatBytes(e.responseSize || 0);
+                    const timeText = new Date(e.timestamp).toLocaleTimeString();
+
+                    return '<div class="request-row ' + (isSelected ? 'selected' : '') + '" onclick="selectRequest(\'' + e.id + '\')">' +
+                        '<div class="row-line-1">' +
+                            '<div class="row-left">' +
+                                (isMock ? '<span class="status-mock">MOCK</span>' : '') +
+                                '<span class="badge ' + methodClass + '">' + (e.method || 'GET') + '</span>' +
+                                '<span class="row-path" title="' + escapeHtml(e.url) + '">' + escapeHtml(e.path || e.url) + '</span>' +
+                            '</div>' +
+                            '<span class="status-pill-badge ' + statusClass + '">' + (code > 0 ? code : (e.error ? 'ERR' : '...')) + '</span>' +
+                        '</div>' +
+                        '<div class="row-line-2">' +
+                            '<span>' + escapeHtml(e.host || '') + '</span>' +
+                            '<span>' + timeText + ' &bull; ' + durationText + ' &bull; ' + sizeText + '</span>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+
+                finalHtml += '</div></div>';
+            }
+
+            container.innerHTML = finalHtml;
+        }
+
+        function toggleSessionGroup(sName) {
+            collapsedSessions[sName] = !collapsedSessions[sName];
+            renderList();
+        }
+
+        function exportSessionHar(sName) {
+            window.open('/api/export/har?sessionId=' + encodeURIComponent(sName), '_blank');
         }
 
         function selectRequest(id) {
@@ -574,7 +652,6 @@
             } catch(e) { }
 
             if (parsedJson === null || typeof parsedJson !== 'object') {
-                // Non-JSON or primitive: render formatted lines
                 const lines = escapeHtml(rawContent).split('\n');
                 let gutterHtml = '', linesHtml = '';
                 for (let i = 0; i < lines.length; i++) {
@@ -595,7 +672,6 @@
                 '</div>';
             }
 
-            // Build Collapsible JSON Tree with line numbers
             const builder = { lineCount: 0, gutterHtml: '', treeHtml: '' };
             renderJsonNode(parsedJson, null, builder, 0, false);
 
@@ -828,6 +904,7 @@
                     selectedEvent = null;
                     document.getElementById('empty-inspector-view').style.display = 'flex';
                     document.getElementById('active-inspector-view').style.display = 'none';
+                    updateSessionDropdown();
                     renderList();
                     showToast('Traffic cleared');
                 })

@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://jitpack.io/#HariKulhari06/tracea"><img src="https://jitpack.io/v/HariKulhari06/tracea.svg" alt="JitPack"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="License"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"/></a>
   <a href="https://developer.android.com"><img src="https://img.shields.io/badge/Platform-Android-green.svg" alt="Platform"/></a>
   <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-2.1.20-purple.svg" alt="Kotlin"/></a>
 </p>
@@ -55,7 +55,7 @@ Add the library dependency to your app module's `build.gradle.kts`:
 ```kotlin
 dependencies {
     // Enable Tracea only in debug builds
-    debugImplementation("com.github.HariKulhari06:tracea:1.0.2")
+    debugImplementation("com.github.HariKulhari06:tracea:1.1.0")
 }
 ```
 
@@ -160,4 +160,4 @@ Tracea consists of decoupled, modular components:
 
 ## 📄 License
 
-Licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.
+Licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

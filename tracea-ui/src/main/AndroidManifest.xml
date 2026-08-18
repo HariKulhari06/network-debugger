@@ -7,7 +7,7 @@
             android:exported="false" />
 
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name="com.hari.tracea.ui.util.TraceaFileProvider"
             android:authorities="${applicationId}.tracea.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">

@@ -104,8 +104,8 @@
         .detail-title-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .detail-url-box { display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); border: 1px solid var(--border-color); padding: 7px 12px; border-radius: 7px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; word-break: break-all; gap: 10px; }
         .detail-url-text { color: var(--text-main); }
-        .mini-copy-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; border-radius: 4px; font-size: 11px; transition: color 0.15s; }
-        .mini-copy-btn:hover { color: var(--primary); background: var(--bg-card-hover); }
+        .mini-copy-btn { background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-muted); cursor: pointer; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
+        .mini-copy-btn:hover { color: var(--primary); border-color: var(--primary); background: var(--bg-card-hover); }
 
         /* Stats Strip */
         .stats-strip { display: flex; gap: 16px; align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
@@ -140,20 +140,34 @@
         .data-table td.key-col { font-weight: 600; color: var(--accent-purple); width: 30%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
         .data-table td.val-col { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: var(--text-main); }
 
-        /* Code Block & JSON Viewer */
-        .code-container { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
-        .code-header { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); }
-        .code-controls { display: flex; align-items: center; gap: 8px; }
-        .code-search-box { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 5px; padding: 4px 8px; color: var(--text-main); font-size: 11px; outline: none; width: 140px; }
-        .code-search-box:focus { border-color: var(--primary); width: 180px; }
-        .code-content { padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; max-height: 480px; overflow-y: auto; color: var(--text-main); }
+        /* Collapsible JSON Viewer & Line Numbers */
+        .code-container { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 16px; display: flex; flex-direction: column; }
+        .code-header { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); flex-wrap: wrap; gap: 8px; }
+        .code-controls { display: flex; align-items: center; gap: 6px; }
+        
+        .json-viewer-wrapper { display: flex; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; line-height: 1.6; max-height: 520px; overflow: auto; background: #0A0C13; }
+        .json-gutter { display: flex; flex-direction: column; padding: 12px 0; background: #07090E; border-right: 1px solid var(--border-color); user-select: none; text-align: right; min-width: 44px; color: #4B5270; }
+        .gutter-num { padding: 0 10px; font-size: 11px; height: 19.2px; line-height: 19.2px; }
 
-        /* JSON Syntax Highlighting */
+        .json-tree-body { flex: 1; padding: 12px 14px; color: var(--text-main); overflow-x: auto; white-space: pre; }
+        .json-line { height: 19.2px; line-height: 19.2px; display: flex; align-items: center; }
+        .json-line:hover { background: rgba(126, 151, 255, 0.06); }
+        
+        .json-caret { display: inline-block; width: 14px; text-align: center; cursor: pointer; user-select: none; color: var(--text-muted); font-size: 10px; transition: transform 0.15s, color 0.15s; margin-right: 4px; }
+        .json-caret:hover { color: var(--primary); }
+        .json-caret.collapsed { transform: rotate(-90deg); }
+        .json-spacer { display: inline-block; width: 18px; }
+
+        .json-indent-guide { border-left: 1px dashed rgba(142, 149, 184, 0.18); margin-left: 6px; padding-left: 12px; }
+        .json-collapsed-preview { display: none; background: var(--bg-card); color: var(--text-muted); padding: 1px 6px; border-radius: 4px; font-size: 11px; cursor: pointer; border: 1px solid var(--border-color); margin: 0 4px; }
+        .json-collapsed-preview:hover { color: var(--primary); border-color: var(--primary); }
+
         .json-key { color: var(--accent-purple); font-weight: 600; }
         .json-string { color: var(--accent-green); }
         .json-number { color: var(--accent-blue); }
         .json-boolean { color: var(--accent-orange); font-weight: 600; }
         .json-null { color: var(--accent-red); font-weight: 600; }
+        .json-bracket { color: #8E95B8; font-weight: 600; }
 
         /* Timing Waterfall Bars */
         .timing-row { display: flex; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border-subtle); font-size: 12px; }
@@ -278,7 +292,6 @@
         let selectedEvent = null;
         let activeFilter = 'ALL';
         let currentTab = 'overview';
-        let bodySearchTerm = '';
         let ws = null;
 
         function initWebSocket() {
@@ -346,7 +359,6 @@
                 return matchesQuery && matchesFilter;
             });
 
-            // Sorting logic
             filtered.sort(function(a, b) {
                 if (sortBy === 'newest') return b.timestamp - a.timestamp;
                 if (sortBy === 'oldest') return a.timestamp - b.timestamp;
@@ -472,7 +484,7 @@
                         '</table>' +
                     '</div>' +
                     '<div class="section-header">Response Body Preview</div>' +
-                    renderCodeCard(e.responseBody, 'response-overview');
+                    renderInteractiveJsonCard(e.responseBody, 'overview-res');
             } else if (currentTab === 'headers') {
                 let reqRows = '', resRows = '', queryRows = '';
                 
@@ -515,10 +527,10 @@
 
                 area.innerHTML = querySection +
                     '<div class="section-header">Request Payload (' + formatBytes(e.requestSize || 0) + ')</div>' +
-                    renderCodeCard(e.requestBody, 'req-body');
+                    renderInteractiveJsonCard(e.requestBody, 'req-body');
             } else if (currentTab === 'response') {
                 area.innerHTML = '<div class="section-header">Response Payload (' + formatBytes(e.responseSize || 0) + ')</div>' +
-                    renderCodeCard(e.responseBody, 'res-body');
+                    renderInteractiveJsonCard(e.responseBody, 'res-body');
             } else if (currentTab === 'timing') {
                 const t = e.timing || {};
                 const total = t.totalMs || (t.endTimestamp && t.startTimestamp ? t.endTimestamp - t.startTimestamp : 1);
@@ -549,51 +561,186 @@
             }
         }
 
-        function renderCodeCard(bodyObj, cardId) {
+        /* Interactive Collapsible JSON Viewer with Line Numbers */
+        function renderInteractiveJsonCard(bodyObj, cardId) {
             if (!bodyObj || !bodyObj.content) {
-                return '<div class="code-container"><div class="code-content" style="color: var(--text-muted); text-align: center; padding: 30px;">(No body payload)</div></div>';
+                return '<div class="code-container"><div class="json-tree-body" style="color: var(--text-muted); text-align: center; padding: 30px;">(No body payload)</div></div>';
             }
 
             const rawContent = bodyObj.content;
-            let formattedContent = rawContent;
-            let isJson = false;
-
+            let parsedJson = null;
             try {
-                const parsed = JSON.parse(rawContent);
-                formattedContent = JSON.stringify(parsed, null, 2);
-                isJson = true;
+                parsedJson = JSON.parse(rawContent);
             } catch(e) { }
 
-            const highlighted = isJson ? highlightJson(formattedContent) : escapeHtml(formattedContent);
+            if (parsedJson === null || typeof parsedJson !== 'object') {
+                // Non-JSON or primitive: render formatted lines
+                const lines = escapeHtml(rawContent).split('\n');
+                let gutterHtml = '', linesHtml = '';
+                for (let i = 0; i < lines.length; i++) {
+                    gutterHtml += '<div class="gutter-num">' + (i + 1) + '</div>';
+                    linesHtml += '<div class="json-line">' + lines[i] + '</div>';
+                }
+                return '<div class="code-container" id="card-' + cardId + '">' +
+                    '<div class="code-header">' +
+                        '<span>' + (bodyObj.contentType || 'Text') + ' &bull; ' + formatBytes(bodyObj.size || 0) + '</span>' +
+                        '<div class="code-controls">' +
+                            '<button class="mini-copy-btn" onclick="copyText(`' + escapeBackticks(rawContent) + '`, \'Payload copied!\')">📋 Copy</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="json-viewer-wrapper">' +
+                        '<div class="json-gutter">' + gutterHtml + '</div>' +
+                        '<div class="json-tree-body">' + linesHtml + '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+
+            // Build Collapsible JSON Tree with line numbers
+            const builder = { lineCount: 0, gutterHtml: '', treeHtml: '' };
+            renderJsonNode(parsedJson, null, builder, 0, false);
 
             return '<div class="code-container" id="card-' + cardId + '">' +
                 '<div class="code-header">' +
-                    '<span>' + (isJson ? 'JSON' : (bodyObj.contentType || 'Text')) + ' &bull; ' + formatBytes(bodyObj.size || 0) + '</span>' +
+                    '<span>JSON &bull; ' + formatBytes(bodyObj.size || 0) + ' &bull; ' + builder.lineCount + ' lines</span>' +
                     '<div class="code-controls">' +
-                        '<button class="mini-copy-btn" onclick="copyText(`' + escapeBackticks(rawContent) + '`, \'Payload copied!\')">📋 Copy</button>' +
+                        '<button class="mini-copy-btn" onclick="expandAllJson(\'card-' + cardId + '\')">▼ Expand All</button>' +
+                        '<button class="mini-copy-btn" onclick="collapseAllJson(\'card-' + cardId + '\')">▶ Collapse All</button>' +
+                        '<button class="mini-copy-btn" onclick="copyText(`' + escapeBackticks(JSON.stringify(parsedJson, null, 2)) + '`, \'Formatted JSON copied!\')">📋 Copy</button>' +
                     '</div>' +
                 '</div>' +
-                '<div class="code-content">' + highlighted + '</div>' +
+                '<div class="json-viewer-wrapper">' +
+                    '<div class="json-gutter" id="gutter-' + cardId + '">' + builder.gutterHtml + '</div>' +
+                    '<div class="json-tree-body" id="tree-' + cardId + '">' + builder.treeHtml + '</div>' +
+                '</div>' +
             '</div>';
         }
 
-        function highlightJson(jsonStr) {
-            const escaped = escapeHtml(jsonStr);
-            return escaped.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-                let cls = 'json-number';
-                if (/^"/.test(match)) {
-                    if (/:$/.test(match)) {
-                        cls = 'json-key';
-                    } else {
-                        cls = 'json-string';
-                    }
-                } else if (/true|false/.test(match)) {
-                    cls = 'json-boolean';
-                } else if (/null/.test(match)) {
-                    cls = 'json-null';
+        function renderJsonNode(val, key, b, indentLevel, isLast) {
+            b.lineCount++;
+            b.gutterHtml += '<div class="gutter-num">' + b.lineCount + '</div>';
+
+            const indentSpaces = '  '.repeat(indentLevel);
+            const comma = isLast ? '' : ',';
+            const keyHtml = key !== null ? '<span class="json-key">"' + escapeHtml(key) + '"</span>: ' : '';
+
+            if (val === null) {
+                b.treeHtml += '<div class="json-line">' + indentSpaces + '<span class="json-spacer"></span>' + keyHtml + '<span class="json-null">null</span>' + comma + '</div>';
+                return;
+            }
+
+            if (typeof val === 'boolean') {
+                b.treeHtml += '<div class="json-line">' + indentSpaces + '<span class="json-spacer"></span>' + keyHtml + '<span class="json-boolean">' + val + '</span>' + comma + '</div>';
+                return;
+            }
+
+            if (typeof val === 'number') {
+                b.treeHtml += '<div class="json-line">' + indentSpaces + '<span class="json-spacer"></span>' + keyHtml + '<span class="json-number">' + val + '</span>' + comma + '</div>';
+                return;
+            }
+
+            if (typeof val === 'string') {
+                b.treeHtml += '<div class="json-line">' + indentSpaces + '<span class="json-spacer"></span>' + keyHtml + '<span class="json-string">"' + escapeHtml(val) + '"</span>' + comma + '</div>';
+                return;
+            }
+
+            if (Array.isArray(val)) {
+                if (val.length === 0) {
+                    b.treeHtml += '<div class="json-line">' + indentSpaces + '<span class="json-spacer"></span>' + keyHtml + '<span class="json-bracket">[]</span>' + comma + '</div>';
+                    return;
                 }
-                return '<span class="' + cls + '">' + match + '</span>';
-            });
+
+                b.treeHtml += '<div class="json-node-block">' +
+                    '<div class="json-line">' +
+                        indentSpaces +
+                        '<span class="json-caret" onclick="toggleJsonBlock(this)">▼</span>' +
+                        keyHtml +
+                        '<span class="json-bracket">[</span>' +
+                        '<span class="json-collapsed-preview" onclick="toggleJsonBlock(this.previousElementSibling.previousElementSibling)">... ' + val.length + ' items ...</span>' +
+                    '</div>' +
+                    '<div class="json-node-children json-indent-guide">';
+
+                for (let i = 0; i < val.length; i++) {
+                    renderJsonNode(val[i], null, b, indentLevel + 1, i === val.length - 1);
+                }
+
+                b.lineCount++;
+                b.gutterHtml += '<div class="gutter-num">' + b.lineCount + '</div>';
+                b.treeHtml += '</div>' +
+                    '<div class="json-line json-closing-line">' + indentSpaces + '<span class="json-spacer"></span><span class="json-bracket">]</span>' + comma + '</div>' +
+                '</div>';
+                return;
+            }
+
+            if (typeof val === 'object') {
+                const keys = Object.keys(val);
+                if (keys.length === 0) {
+                    b.treeHtml += '<div class="json-line">' + indentSpaces + '<span class="json-spacer"></span>' + keyHtml + '<span class="json-bracket">{}</span>' + comma + '</div>';
+                    return;
+                }
+
+                b.treeHtml += '<div class="json-node-block">' +
+                    '<div class="json-line">' +
+                        indentSpaces +
+                        '<span class="json-caret" onclick="toggleJsonBlock(this)">▼</span>' +
+                        keyHtml +
+                        '<span class="json-bracket">{</span>' +
+                        '<span class="json-collapsed-preview" onclick="toggleJsonBlock(this.previousElementSibling.previousElementSibling)">... ' + keys.length + ' keys ...</span>' +
+                    '</div>' +
+                    '<div class="json-node-children json-indent-guide">';
+
+                for (let i = 0; i < keys.length; i++) {
+                    const k = keys[i];
+                    renderJsonNode(val[k], k, b, indentLevel + 1, i === keys.length - 1);
+                }
+
+                b.lineCount++;
+                b.gutterHtml += '<div class="gutter-num">' + b.lineCount + '</div>';
+                b.treeHtml += '</div>' +
+                    '<div class="json-line json-closing-line">' + indentSpaces + '<span class="json-spacer"></span><span class="json-bracket">}</span>' + comma + '</div>' +
+                '</div>';
+            }
+        }
+
+        function toggleJsonBlock(caretEl) {
+            const block = caretEl.closest('.json-node-block');
+            if (!block) return;
+            const children = block.querySelector('.json-node-children');
+            const preview = block.querySelector('.json-collapsed-preview');
+            const closing = block.querySelector('.json-closing-line');
+            const caret = block.querySelector('.json-caret');
+
+            if (!children) return;
+            const isCollapsed = children.style.display === 'none';
+
+            if (isCollapsed) {
+                children.style.display = 'block';
+                if (preview) preview.style.display = 'none';
+                if (closing) closing.style.display = 'flex';
+                if (caret) caret.classList.remove('collapsed');
+            } else {
+                children.style.display = 'none';
+                if (preview) preview.style.display = 'inline-block';
+                if (closing) closing.style.display = 'none';
+                if (caret) caret.classList.add('collapsed');
+            }
+        }
+
+        function expandAllJson(cardId) {
+            const card = document.getElementById(cardId);
+            if (!card) return;
+            card.querySelectorAll('.json-node-children').forEach(el => el.style.display = 'block');
+            card.querySelectorAll('.json-collapsed-preview').forEach(el => el.style.display = 'none');
+            card.querySelectorAll('.json-closing-line').forEach(el => el.style.display = 'flex');
+            card.querySelectorAll('.json-caret').forEach(el => el.classList.remove('collapsed'));
+        }
+
+        function collapseAllJson(cardId) {
+            const card = document.getElementById(cardId);
+            if (!card) return;
+            card.querySelectorAll('.json-node-children').forEach(el => el.style.display = 'none');
+            card.querySelectorAll('.json-collapsed-preview').forEach(el => el.style.display = 'inline-block');
+            card.querySelectorAll('.json-closing-line').forEach(el => el.style.display = 'none');
+            card.querySelectorAll('.json-caret').forEach(el => el.classList.add('collapsed'));
         }
 
         // Productivity Actions

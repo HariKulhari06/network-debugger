@@ -1053,79 +1053,91 @@
             return r;
         }
 
-        /* 🚀 1-Click Automated Jira Flow: Copies Screenshot Blob, Auto-Downloads HAR & Screenshot, and Opens Prefilled Jira */
+        /* 🚀 1-Click Automated Jira Flow: Opens Jira Tab First (Bypasses Popup Blocker), Auto-Copies Description, and Staggers Downloads */
         function openJiraPrefilledTab() {
-            saveJiraConfig();
-            const rawDomain = document.getElementById('jira-domain-input').value.trim() || localStorage.getItem('tracea_jira_domain');
-            let jiraDomain = rawDomain;
+            try {
+                saveJiraConfig();
+                const rawDomain = document.getElementById('jira-domain-input').value.trim() || localStorage.getItem('tracea_jira_domain');
+                let jiraDomain = rawDomain;
 
-            if (!jiraDomain) {
-                jiraDomain = prompt('Enter your Jira Domain (e.g., your-company.atlassian.net):');
-                if (!jiraDomain) return;
-                jiraDomain = jiraDomain.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-                localStorage.setItem('tracea_jira_domain', jiraDomain);
-                document.getElementById('jira-domain-input').value = jiraDomain;
-            } else {
-                jiraDomain = jiraDomain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+                if (!jiraDomain) {
+                    jiraDomain = prompt('Enter your Jira Domain (e.g., your-company.atlassian.net):');
+                    if (!jiraDomain) return;
+                    jiraDomain = jiraDomain.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+                    localStorage.setItem('tracea_jira_domain', jiraDomain);
+                    document.getElementById('jira-domain-input').value = jiraDomain;
+                } else {
+                    jiraDomain = jiraDomain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+                }
+
+                const project = (document.getElementById('jira-project-input').value.trim() || localStorage.getItem('tracea_jira_project') || '').trim();
+                const sessionEvents = allEvents.filter(e => (e.sessionName || e.sessionId || 'Default Session') === currentModalSession);
+                const firstError = sessionEvents.find(e => (e.statusCode && e.statusCode >= 400) || !!e.error);
+
+                // Bug Summary Title
+                const summaryTitle = firstError
+                    ? `[${currentModalSession}] Bug: ${firstError.method} ${firstError.path || firstError.url} returned ${firstError.statusCode || 'Failure'}`
+                    : `[${currentModalSession}] Network Bug Report`;
+
+                // Description
+                const description = generateSessionJiraReport(currentModalSession, sessionEvents);
+
+                // Build universal Jira URL
+                let jiraUrl;
+                if (/^\d+$/.test(project)) {
+                    jiraUrl = `https://${jiraDomain}/secure/CreateIssueDetails!init.jspa?pid=${encodeURIComponent(project)}&issuetype=1&summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
+                } else if (project) {
+                    jiraUrl = `https://${jiraDomain}/secure/CreateIssue!default.jspa?project=${encodeURIComponent(project)}&summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
+                } else {
+                    jiraUrl = `https://${jiraDomain}/secure/CreateIssue!default.jspa?summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
+                }
+
+                // 1. Open Jira window SYNCHRONOUSLY FIRST to guarantee browser never blocks popup
+                window.open(jiraUrl, '_blank');
+
+                // 2. Copy description text to clipboard with fallback
+                copyText(description, '');
+
+                // 3. Stagger file downloads so browser never flags multi-download spam
+                setTimeout(function() {
+                    try { downloadAnnotatedScreenshot(); } catch(e) { console.warn(e); }
+                }, 200);
+
+                setTimeout(function() {
+                    try { downloadModalSessionHar(); } catch(e) { console.warn(e); }
+                }, 500);
+
+                showToast('🚀 Jira opened! Description copied to clipboard, screenshot and HAR downloaded.');
+            } catch(err) {
+                console.error(err);
+                alert('Error opening Jira: ' + err.message);
             }
-
-            const project = (document.getElementById('jira-project-input').value.trim() || localStorage.getItem('tracea_jira_project') || '').trim();
-            const sessionEvents = allEvents.filter(e => (e.sessionName || e.sessionId || 'Default Session') === currentModalSession);
-            const firstError = sessionEvents.find(e => (e.statusCode && e.statusCode >= 400) || !!e.error);
-
-            // Bug Summary Title
-            const summaryTitle = firstError
-                ? `[${currentModalSession}] Bug: ${firstError.method} ${firstError.path || firstError.url} returned ${firstError.statusCode || 'Failure'}`
-                : `[${currentModalSession}] Network Bug Report`;
-
-            // Description
-            const description = generateSessionJiraReport(currentModalSession, sessionEvents);
-
-            // 1. Copy description text to clipboard so QA can paste directly if Jira's 2-step wizard drops it
-            navigator.clipboard.writeText(description).catch(e => console.warn(e));
-
-            // 2. Auto-download annotated screenshot image
-            downloadAnnotatedScreenshot();
-
-            // 3. Stagger HAR download by 300ms so browser doesn't block as multi-download spam
-            setTimeout(function() {
-                downloadModalSessionHar();
-            }, 300);
-
-            // 4. Build universal Jira URL
-            // If numeric PID (e.g. 10000), Jira skips the project picker and pre-fills directly!
-            let jiraUrl;
-            if (/^\d+$/.test(project)) {
-                jiraUrl = `https://${jiraDomain}/secure/CreateIssueDetails!init.jspa?pid=${encodeURIComponent(project)}&issuetype=1&summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
-            } else if (project) {
-                jiraUrl = `https://${jiraDomain}/secure/CreateIssue!default.jspa?project=${encodeURIComponent(project)}&summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
-            } else {
-                jiraUrl = `https://${jiraDomain}/secure/CreateIssue!default.jspa?summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
-            }
-
-            window.open(jiraUrl, '_blank');
-
-            showToast('🚀 Jira opened! Description copied to clipboard (press Cmd+V/Ctrl+V in Jira to paste), screenshot and HAR downloaded.');
         }
 
         function copyScreenshotToClipboard(showFeedback = true) {
-            canvas.toBlob(function(blob) {
-                if (blob && navigator.clipboard && navigator.clipboard.write) {
-                    const item = new ClipboardItem({ 'image/png': blob });
-                    navigator.clipboard.write([item])
-                        .then(() => {
-                            if (showFeedback) showToast('Screenshot image copied to clipboard! Press Cmd+V/Ctrl+V in Jira to paste.');
-                        })
-                        .catch(err => {
-                            console.warn('Clipboard write error:', err);
-                        });
-                }
-            }, 'image/png');
+            try {
+                canvas.toBlob(function(blob) {
+                    if (blob && navigator.clipboard && navigator.clipboard.write) {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        navigator.clipboard.write([item])
+                            .then(() => {
+                                if (showFeedback) showToast('Screenshot image copied to clipboard! Press Cmd+V/Ctrl+V in Jira to paste.');
+                            })
+                            .catch(err => {
+                                console.warn('Clipboard write error:', err);
+                                if (showFeedback) showToast('Image clipboard not supported in this browser. Use Save button instead.');
+                            });
+                    } else {
+                        if (showFeedback) showToast('Image clipboard not supported in this browser. Use Save button instead.');
+                    }
+                }, 'image/png');
+            } catch(e) {
+                if (showFeedback) showToast('Use Save Screenshot button to download image.');
+            }
         }
 
         function refreshModalScreenshot() {
             bgImage = new Image();
-            bgImage.crossOrigin = "anonymous";
             bgImage.src = '/api/device/screenshot?t=' + Date.now();
             bgImage.onload = function() {
                 canvas.width = bgImage.width;

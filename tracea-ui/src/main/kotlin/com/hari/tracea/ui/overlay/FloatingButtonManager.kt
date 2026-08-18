@@ -34,8 +34,8 @@ object FloatingButtonManager : Application.ActivityLifecycleCallbacks {
     val requestCount: StateFlow<Int> = _requestCount
 
     // Retain coordinates across activity switches
-    private var lastOffsetX: Float = 16f
-    private var lastOffsetY: Float = 200f
+    private var lastOffsetX: Float = 24f
+    private var lastOffsetY: Float = 250f
 
     fun init(application: Application, config: TraceaConfig) {
         if (isInitialized) return
@@ -43,8 +43,12 @@ object FloatingButtonManager : Application.ActivityLifecycleCallbacks {
 
         // Read user preference from SharedPreferences, fallback to TraceaConfig
         val prefs = application.getSharedPreferences("tracea_settings", Context.MODE_PRIVATE)
-        val enabledInPrefs = prefs.getBoolean("floating_button", config.showFloatingButton)
-        _isFloatingButtonEnabled.value = config.showFloatingButton && enabledInPrefs
+        val enabled = if (prefs.contains("floating_button")) {
+            prefs.getBoolean("floating_button", true) && config.showFloatingButton
+        } else {
+            config.showFloatingButton
+        }
+        _isFloatingButtonEnabled.value = enabled
 
         application.registerActivityLifecycleCallbacks(this)
         isInitialized = true
@@ -79,24 +83,34 @@ object FloatingButtonManager : Application.ActivityLifecycleCallbacks {
         if (activity.isFinishing || activity.isDestroyed) return
 
         val decorView = activity.window?.decorView as? ViewGroup ?: return
-        val contentView = activity.findViewById<ViewGroup>(android.R.id.content) ?: decorView
 
         // Avoid adding duplicate overlay
-        if (contentView.findViewWithTag<ComposeView>(TAG_OVERLAY_VIEW) != null) return
+        if (decorView.findViewWithTag<ComposeView>(TAG_OVERLAY_VIEW) != null) return
+
+        // Constrain initial coordinates to screen bounds
+        val metrics = activity.resources.displayMetrics
+        val maxX = (metrics.widthPixels - 200).coerceAtLeast(0).toFloat()
+        val maxY = (metrics.heightPixels - 200).coerceAtLeast(0).toFloat()
+        lastOffsetX = lastOffsetX.coerceIn(16f, maxX)
+        lastOffsetY = lastOffsetY.coerceIn(80f, maxY)
 
         val composeView = ComposeView(activity).apply {
             tag = TAG_OVERLAY_VIEW
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            elevation = 200f
+            translationZ = 200f
+            translationX = lastOffsetX
+            translationY = lastOffsetY
             setContent {
                 val count by _requestCount.collectAsState()
                 DebuggerTheme {
                     FloatingDebugButton(
                         requestCount = count,
-                        initialOffsetX = lastOffsetX,
-                        initialOffsetY = lastOffsetY,
-                        onPositionChanged = { x, y ->
-                            lastOffsetX = x
-                            lastOffsetY = y
+                        onDrag = { dx, dy ->
+                            lastOffsetX = (lastOffsetX + dx).coerceIn(0f, maxX)
+                            lastOffsetY = (lastOffsetY + dy).coerceIn(0f, maxY)
+                            translationX = lastOffsetX
+                            translationY = lastOffsetY
                         },
                         onClick = {
                             showTracea(activity)
@@ -113,21 +127,25 @@ object FloatingButtonManager : Application.ActivityLifecycleCallbacks {
             gravity = Gravity.TOP or Gravity.START
         }
 
-        contentView.addView(composeView, layoutParams)
+        decorView.addView(composeView, layoutParams)
+        composeView.bringToFront()
     }
 
     private fun detachFromActivity(activity: Activity) {
-        val decorView = activity.window?.decorView as? ViewGroup
-        val contentView = activity.findViewById<ViewGroup>(android.R.id.content) ?: decorView ?: return
-        val existingView = contentView.findViewWithTag<ComposeView>(TAG_OVERLAY_VIEW)
+        val decorView = activity.window?.decorView as? ViewGroup ?: return
+        val existingView = decorView.findViewWithTag<ComposeView>(TAG_OVERLAY_VIEW)
         if (existingView != null) {
-            contentView.removeView(existingView)
+            decorView.removeView(existingView)
         }
     }
 
     override fun onActivityResumed(activity: Activity) {
         currentActivityRef = WeakReference(activity)
-        attachToActivity(activity)
+        activity.window?.decorView?.post {
+            if (currentActivityRef?.get() === activity) {
+                attachToActivity(activity)
+            }
+        }
     }
 
     override fun onActivityPaused(activity: Activity) {

@@ -7,7 +7,6 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -20,57 +19,49 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hari.tracea.ui.theme.LocalDebuggerColors
-import kotlin.math.roundToInt
 
 @Composable
 fun FloatingDebugButton(
     requestCount: Int,
-    initialOffsetX: Float = 16f,
-    initialOffsetY: Float = 200f,
-    onPositionChanged: (Float, Float) -> Unit = { _, _ -> },
+    onDrag: (Float, Float) -> Unit = { _, _ -> },
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = LocalDebuggerColors.current
-
-    var offsetX by remember { mutableStateOf(initialOffsetX) }
-    var offsetY by remember { mutableStateOf(initialOffsetY) }
+    var isDragging by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
-            .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
             .pointerInput(Unit) {
                 detectDragGestures(
-                    onDragEnd = {
-                        onPositionChanged(offsetX, offsetY)
-                    },
-                    onDragCancel = {
-                        onPositionChanged(offsetX, offsetY)
-                    },
+                    onDragStart = { isDragging = true },
+                    onDragEnd = { isDragging = false },
+                    onDragCancel = { isDragging = false },
                     onDrag = { change, dragAmount ->
                         change.consume()
-                        offsetX += dragAmount.x
-                        offsetY += dragAmount.y
+                        onDrag(dragAmount.x, dragAmount.y)
                     }
                 )
             }
-            .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp))
+            .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp))
             .clip(RoundedCornerShape(24.dp))
             .background(colors.surfaceContainer)
             .border(
                 width = 1.5.dp,
-                color = colors.primary.copy(alpha = 0.8f),
+                color = colors.primary.copy(alpha = 0.85f),
                 shape = RoundedCornerShape(24.dp)
             )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .clickable {
+                if (!isDragging) {
+                    onClick()
+                }
+            }
+            .padding(horizontal = 14.dp, vertical = 9.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

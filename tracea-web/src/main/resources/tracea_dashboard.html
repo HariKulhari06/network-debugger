@@ -6,191 +6,266 @@
     <title>Tracea Web Inspector</title>
     <style>
         :root {
-            --bg-base: #0F111A;
-            --bg-surface: #171926;
-            --bg-card: #1E202E;
-            --bg-card-hover: #25283B;
-            --bg-card-active: #2D314A;
-            --border-color: #30344D;
-            --text-main: #E2E4F3;
-            --text-muted: #9499B8;
+            --bg-base: #0D0F17;
+            --bg-surface: #141724;
+            --bg-card: #1C2033;
+            --bg-card-hover: #242942;
+            --bg-card-active: #2D3352;
+            --border-color: #2B304C;
+            --border-subtle: #20243B;
+            --text-main: #E2E6FC;
+            --text-muted: #8E95B8;
+            --text-subtle: #636A8E;
             --primary: #7E97FF;
-            --primary-hover: #6784FF;
+            --primary-hover: #6B86FA;
+            --primary-glow: rgba(126, 151, 255, 0.18);
             --accent-green: #4FD6BE;
+            --accent-green-bg: rgba(79, 214, 190, 0.12);
             --accent-red: #F07178;
+            --accent-red-bg: rgba(240, 113, 120, 0.12);
             --accent-orange: #FFCB6B;
+            --accent-orange-bg: rgba(255, 203, 107, 0.12);
             --accent-purple: #C792EA;
             --accent-blue: #82AAFF;
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background: var(--bg-base); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* Top Navigation Bar */
+        body { background: var(--bg-base); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-size: 13px; }
+
+        /* Top Header */
         header {
             background: var(--bg-surface);
             border-bottom: 1px solid var(--border-color);
-            padding: 10px 20px;
+            padding: 0 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 56px;
+            height: 52px;
             flex-shrink: 0;
+            z-index: 10;
         }
-        .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
-        .logo-badge { background: var(--primary); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
-        .status-pill { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--accent-green); background: rgba(79, 214, 190, 0.1); border: 1px solid rgba(79, 214, 190, 0.2); padding: 4px 10px; border-radius: 20px; }
+        .brand-area { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
+        .brand-badge { background: linear-gradient(135deg, #7E97FF, #5C76E8); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
+        .status-pill { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--accent-green); background: var(--accent-green-bg); border: 1px solid rgba(79, 214, 190, 0.3); padding: 4px 10px; border-radius: 20px; }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
-        .header-actions { display: flex; align-items: center; gap: 12px; }
-        .nav-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .nav-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
         .nav-btn:hover { background: var(--bg-card-hover); border-color: var(--primary); }
-        .nav-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
         .danger-btn { color: var(--accent-red); border-color: rgba(240, 113, 120, 0.3); }
-        .danger-btn:hover { background: rgba(240, 113, 120, 0.15); border-color: var(--accent-red); }
+        .danger-btn:hover { background: var(--accent-red-bg); border-color: var(--accent-red); }
 
-        /* Main Workspace Split Layout */
+        /* Split Screen Workspace */
         main { display: flex; flex: 1; overflow: hidden; }
-        
-        /* Left Pane: Transaction Table */
-        .left-pane { width: 45%; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; background: var(--bg-surface); }
-        .search-toolbar { padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
-        .search-box { width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-size: 13px; outline: none; }
+
+        /* Left Pane: Requests Table */
+        .left-pane { width: 42%; min-width: 360px; max-width: 600px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; background: var(--bg-surface); }
+        .toolbar { padding: 10px 14px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); }
+        .search-row { display: flex; gap: 8px; align-items: center; }
+        .search-box { flex: 1; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 7px; padding: 7px 12px; color: var(--text-main); font-size: 12px; outline: none; transition: border-color 0.15s; }
         .search-box:focus { border-color: var(--primary); }
-        .filter-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
-        .chip { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 14px; font-size: 11px; font-weight: 600; cursor: pointer; user-select: none; }
-        .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-        .chip.error.active { background: var(--accent-red); border-color: var(--accent-red); }
+        .sort-select { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 7px; padding: 6px 8px; font-size: 11px; font-weight: 600; outline: none; cursor: pointer; }
+
+        .filter-row { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; }
+        .filter-chip { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color); padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.15s; white-space: nowrap; }
+        .filter-chip:hover { color: var(--text-main); border-color: var(--primary); }
+        .filter-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .filter-chip.error.active { background: var(--accent-red); border-color: var(--accent-red); }
 
         .request-list { flex: 1; overflow-y: auto; }
-        .request-item { padding: 10px 16px; border-bottom: 1px solid rgba(48, 52, 77, 0.5); cursor: pointer; transition: background 0.1s; display: flex; flex-direction: column; gap: 4px; }
-        .request-item:hover { background: var(--bg-card-hover); }
-        .request-item.selected { background: var(--bg-card-active); border-left: 3px solid var(--primary); }
-        .req-line-1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .req-method-path { display: flex; align-items: center; gap: 8px; overflow: hidden; }
-        .req-path { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); font-family: monospace; }
-        .req-line-2 { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+        .request-row { padding: 9px 14px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background 0.1s; display: flex; flex-direction: column; gap: 4px; }
+        .request-row:hover { background: var(--bg-card-hover); }
+        .request-row.selected { background: var(--bg-card-active); border-left: 3px solid var(--primary); padding-left: 11px; }
+
+        .row-line-1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .row-left { display: flex; align-items: center; gap: 8px; overflow: hidden; flex: 1; }
+        .row-path { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .row-line-2 { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
 
         /* Badges */
-        .badge { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
-        .badge-get { color: var(--accent-green); }
-        .badge-post { color: var(--primary); }
-        .badge-put { color: var(--accent-orange); }
-        .badge-delete { color: var(--accent-red); }
-        .badge-patch { color: var(--accent-purple); }
+        .badge { font-size: 10.5px; font-weight: 800; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 0.3px; flex-shrink: 0; }
+        .badge-get { color: var(--accent-green); background: var(--accent-green-bg); }
+        .badge-post { color: var(--primary); background: var(--primary-glow); }
+        .badge-put { color: var(--accent-orange); background: var(--accent-orange-bg); }
+        .badge-delete { color: var(--accent-red); background: var(--accent-red-bg); }
+        .badge-patch { color: var(--accent-purple); background: rgba(199, 146, 234, 0.12); }
         
-        .status-badge { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; color: #fff; }
-        .status-2xx { background: var(--accent-green); color: #0F111A; }
-        .status-3xx { background: var(--accent-blue); }
-        .status-4xx { background: var(--accent-red); }
-        .status-5xx { background: var(--accent-red); }
-        .status-mock { background: #9C27B0; color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-right: 4px; font-weight: 700; }
+        .status-pill-badge { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .status-2xx { color: var(--accent-green); background: var(--accent-green-bg); border: 1px solid rgba(79, 214, 190, 0.3); }
+        .status-3xx { color: var(--accent-blue); background: rgba(130, 170, 255, 0.12); border: 1px solid rgba(130, 170, 255, 0.3); }
+        .status-4xx { color: var(--accent-orange); background: var(--accent-orange-bg); border: 1px solid rgba(255, 203, 107, 0.3); }
+        .status-5xx { color: var(--accent-red); background: var(--accent-red-bg); border: 1px solid rgba(240, 113, 120, 0.3); }
+        .status-mock { background: #9C27B0; color: #fff; font-size: 9.5px; padding: 2px 5px; border-radius: 3px; font-weight: 800; }
 
-        /* Right Pane: Inspector */
-        .right-pane { width: 55%; display: flex; flex-direction: column; background: var(--bg-base); overflow: hidden; }
-        .empty-inspector { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); gap: 10px; font-size: 14px; }
+        /* Right Pane: Deep Inspector */
+        .right-pane { flex: 1; display: flex; flex-direction: column; background: var(--bg-base); overflow: hidden; }
+        .empty-placeholder { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); gap: 12px; font-size: 14px; user-select: none; }
         
-        .detail-header { padding: 14px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; }
-        .detail-title-row { display: flex; align-items: center; justify-content: space-between; }
-        .detail-url { font-size: 12px; color: var(--text-muted); word-break: break-all; font-family: monospace; background: var(--bg-card); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); }
-        
-        /* Fast Action Bar */
-        .action-bar { display: flex; gap: 8px; padding: 10px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); }
-        .action-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s; }
-        .action-btn:hover { background: var(--bg-card-hover); border-color: var(--primary); color: var(--primary); }
-        .action-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
-        .action-btn.primary:hover { background: var(--primary-hover); }
+        .detail-top-card { padding: 14px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .detail-title-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .detail-url-box { display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); border: 1px solid var(--border-color); padding: 7px 12px; border-radius: 7px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; word-break: break-all; gap: 10px; }
+        .detail-url-text { color: var(--text-main); }
+        .mini-copy-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; border-radius: 4px; font-size: 11px; transition: color 0.15s; }
+        .mini-copy-btn:hover { color: var(--primary); background: var(--bg-card-hover); }
 
-        /* Detail Tabs */
-        .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); background: var(--bg-surface); padding: 0 20px; gap: 4px; }
-        .tab-item { padding: 10px 16px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
-        .tab-item.active { color: var(--primary); border-bottom-color: var(--primary); }
-        .tab-content { flex: 1; overflow-y: auto; padding: 20px; }
+        /* Stats Strip */
+        .stats-strip { display: flex; gap: 16px; align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+        .stat-item { display: flex; align-items: center; gap: 5px; }
+        .stat-val { color: var(--text-main); font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 
-        /* Tables & Code Containers */
-        .kv-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
-        .kv-table th { text-align: left; padding: 8px 12px; background: var(--bg-card); color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); }
-        .kv-table td { padding: 8px 12px; border-bottom: 1px solid rgba(48, 52, 77, 0.4); word-break: break-all; }
-        .kv-table td:first-child { font-weight: 600; color: var(--accent-purple); width: 35%; font-family: monospace; }
-        .kv-table td:last-child { font-family: monospace; color: var(--text-main); }
-        
-        .code-block { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; overflow-x: auto; color: var(--text-main); line-height: 1.5; max-height: 450px; }
-        .section-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px 0; }
-        .section-title:first-child { margin-top: 0; }
+        /* Action Toolbar */
+        .actions-strip { display: flex; gap: 8px; padding: 8px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); flex-wrap: wrap; }
+        .action-chip-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s; }
+        .action-chip-btn:hover { background: var(--bg-card-hover); border-color: var(--primary); color: var(--primary); }
+        .action-chip-btn.highlight { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .action-chip-btn.highlight:hover { background: var(--primary-hover); }
+
+        /* Tab Navigation */
+        .tab-strip { display: flex; border-bottom: 1px solid var(--border-color); background: var(--bg-surface); padding: 0 20px; gap: 6px; }
+        .tab-btn { padding: 10px 14px; font-size: 12.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; user-select: none; }
+        .tab-btn:hover { color: var(--text-main); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* Inspector Body Content */
+        .inspector-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+        /* Tables & Content Cards */
+        .section-header { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin: 16px 0 8px 0; display: flex; align-items: center; justify-content: space-between; }
+        .section-header:first-child { margin-top: 0; }
+
+        .table-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+        .data-table th { text-align: left; padding: 8px 14px; background: var(--bg-card); color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); }
+        .data-table td { padding: 8px 14px; border-bottom: 1px solid var(--border-subtle); word-break: break-all; }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table td.key-col { font-weight: 600; color: var(--accent-purple); width: 30%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .data-table td.val-col { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: var(--text-main); }
+
+        /* Code Block & JSON Viewer */
+        .code-container { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+        .code-header { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); }
+        .code-controls { display: flex; align-items: center; gap: 8px; }
+        .code-search-box { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 5px; padding: 4px 8px; color: var(--text-main); font-size: 11px; outline: none; width: 140px; }
+        .code-search-box:focus { border-color: var(--primary); width: 180px; }
+        .code-content { padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; max-height: 480px; overflow-y: auto; color: var(--text-main); }
+
+        /* JSON Syntax Highlighting */
+        .json-key { color: var(--accent-purple); font-weight: 600; }
+        .json-string { color: var(--accent-green); }
+        .json-number { color: var(--accent-blue); }
+        .json-boolean { color: var(--accent-orange); font-weight: 600; }
+        .json-null { color: var(--accent-red); font-weight: 600; }
+
+        /* Timing Waterfall Bars */
+        .timing-row { display: flex; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border-subtle); font-size: 12px; }
+        .timing-label { width: 150px; color: var(--text-muted); font-weight: 500; }
+        .timing-bar-container { flex: 1; height: 12px; background: var(--bg-card); border-radius: 6px; overflow: hidden; margin: 0 12px; position: relative; }
+        .timing-bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--primary), #82AAFF); transition: width 0.3s; }
+        .timing-val { width: 70px; text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 600; color: var(--text-main); }
 
         /* Toast Feedback */
-        #toast { position: fixed; bottom: 20px; right: 20px; background: #2E7D32; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; z-index: 1000; }
+        #toast { position: fixed; bottom: 20px; right: 20px; background: #2E7D32; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,0.5); display: none; z-index: 1000; animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     <header>
-        <div class="logo-area">
+        <div class="brand-area">
             <span>📡 Tracea</span>
-            <span class="logo-badge">WEB INSPECTOR</span>
+            <span class="brand-badge">WEB INSPECTOR</span>
             <div class="status-pill">
                 <div class="status-dot"></div>
                 <span id="device-status">Live Connected</span>
             </div>
         </div>
         <div class="header-actions">
-            <span style="font-size: 12px; color: var(--text-muted); font-family: monospace;" id="req-counter">0 requests</span>
-            <button class="nav-btn" onclick="exportFullHar()">📦 Download Full HAR</button>
+            <span style="font-size: 12px; color: var(--text-muted); font-family: ui-monospace, monospace;" id="req-counter">0 transactions</span>
+            <button class="nav-btn" onclick="exportFullHar()">📦 Export Session HAR</button>
             <button class="nav-btn danger-btn" onclick="clearAllRequests()">🗑️ Clear Traffic</button>
         </div>
     </header>
 
     <main>
-        <!-- Left Pane: Transaction Stream -->
+        <!-- Left Pane: Transactions Stream Table -->
         <section class="left-pane">
-            <div class="search-toolbar">
-                <input type="text" id="search-input" class="search-box" placeholder="Filter by endpoint path, host, method..." oninput="filterRequests()">
-                <div class="filter-chips">
-                    <div class="chip active" onclick="setFilter('ALL', this)">ALL</div>
-                    <div class="chip" onclick="setFilter('2xx', this)">2xx</div>
-                    <div class="chip" onclick="setFilter('3xx', this)">3xx</div>
-                    <div class="chip" onclick="setFilter('4xx', this)">4xx</div>
-                    <div class="chip" onclick="setFilter('5xx', this)">5xx</div>
-                    <div class="chip error" onclick="setFilter('ERRORS', this)">Errors</div>
+            <div class="toolbar">
+                <div class="search-row">
+                    <input type="text" id="search-input" class="search-box" placeholder="Filter by URL, host, method..." oninput="renderList()">
+                    <select id="sort-select" class="sort-select" onchange="renderList()">
+                        <option value="newest">🕒 Newest First</option>
+                        <option value="oldest">🕒 Oldest First</option>
+                        <option value="slowest">⏱️ Slowest</option>
+                        <option value="largest">💾 Largest Size</option>
+                        <option value="status">🚦 Status Code</option>
+                    </select>
+                </div>
+                <div class="filter-row">
+                    <div class="filter-chip active" onclick="setFilter('ALL', this)">ALL</div>
+                    <div class="filter-chip" onclick="setFilter('2xx', this)">2xx Success</div>
+                    <div class="filter-chip" onclick="setFilter('3xx', this)">3xx Redirect</div>
+                    <div class="filter-chip" onclick="setFilter('4xx', this)">4xx Client Err</div>
+                    <div class="filter-chip" onclick="setFilter('5xx', this)">5xx Server Err</div>
+                    <div class="filter-chip error" onclick="setFilter('ERRORS', this)">Errors</div>
                 </div>
             </div>
             <div class="request-list" id="request-list-container">
-                <!-- Dynamically populated rows -->
+                <!-- Dynamically injected rows -->
             </div>
         </section>
 
-        <!-- Right Pane: Deep Inspector -->
+        <!-- Right Pane: Deep Transaction Details Inspector -->
         <section class="right-pane" id="inspector-pane">
-            <div class="empty-inspector" id="empty-inspector-view">
-                <div style="font-size: 36px;">🔍</div>
-                <div>Select a network transaction to inspect details</div>
+            <div class="empty-placeholder" id="empty-inspector-view">
+                <div style="font-size: 42px;">🔍</div>
+                <div style="font-weight: 600; font-size: 15px;">Select a network request</div>
+                <div style="font-size: 12px; color: var(--text-subtle);">Inspect full headers, parameters, formatted payload bodies, and timing waterfall.</div>
             </div>
 
             <div id="active-inspector-view" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
-                <div class="detail-header">
-                    <div class="detail-title-row">
+                <!-- Header Banner -->
+                <div class="detail-top-card">
+                    <div class="detail-title-bar">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span id="detail-method-badge" class="badge"></span>
-                            <span id="detail-path" style="font-size: 16px; font-weight: 700; font-family: monospace;"></span>
+                            <span id="detail-path" style="font-size: 15px; font-weight: 700; font-family: ui-monospace, monospace;"></span>
                             <span id="detail-mock-badge" class="status-mock" style="display: none;">🎭 MOCK</span>
                         </div>
-                        <span id="detail-status-badge" class="status-badge"></span>
+                        <span id="detail-status-badge" class="status-pill-badge"></span>
                     </div>
-                    <div class="detail-url" id="detail-full-url"></div>
+
+                    <div class="detail-url-box">
+                        <span class="detail-url-text" id="detail-full-url"></span>
+                        <button class="mini-copy-btn" onclick="copyText(selectedEvent ? selectedEvent.url : '', 'URL copied!')">📋 Copy</button>
+                    </div>
+
+                    <div class="stats-strip">
+                        <div class="stat-item">⏱️ Duration: <span class="stat-val" id="stat-duration">-</span></div>
+                        <div class="stat-item">📤 Request: <span class="stat-val" id="stat-req-size">-</span></div>
+                        <div class="stat-item">📥 Response: <span class="stat-val" id="stat-res-size">-</span></div>
+                        <div class="stat-item">🕒 Time: <span class="stat-val" id="stat-timestamp">-</span></div>
+                        <div class="stat-item">🏷️ Session: <span class="stat-val" id="stat-session">-</span></div>
+                    </div>
                 </div>
 
-                <div class="action-bar">
-                    <button class="action-btn primary" onclick="copyJiraMarkdown()">🐛 Copy Jira Markdown</button>
-                    <button class="action-btn" onclick="copyCurlCommand()">📋 Copy as cURL</button>
-                    <button class="action-btn" onclick="downloadSingleHar()">📦 Download HAR</button>
+                <!-- 1-Click Laptop Actions Toolbar -->
+                <div class="actions-strip">
+                    <button class="action-chip-btn highlight" onclick="copyJiraMarkdown()">🐛 Copy Jira Markdown</button>
+                    <button class="action-chip-btn" onclick="copySlackMarkdown()">💬 Copy Slack / Markdown</button>
+                    <button class="action-chip-btn" onclick="copyCurlCommand()">📋 Copy as cURL</button>
+                    <button class="action-chip-btn" onclick="downloadSingleHar()">📦 Export Single HAR</button>
                 </div>
 
-                <div class="tab-bar">
-                    <div class="tab-item active" onclick="switchTab('overview', this)">Overview</div>
-                    <div class="tab-item" onclick="switchTab('request', this)">Request</div>
-                    <div class="tab-item" onclick="switchTab('response', this)">Response</div>
-                    <div class="tab-item" onclick="switchTab('timing', this)">Timing</div>
+                <!-- Tabs Strip -->
+                <div class="tab-strip">
+                    <div class="tab-btn active" onclick="switchTab('overview', this)">Overview</div>
+                    <div class="tab-btn" onclick="switchTab('headers', this)">Headers</div>
+                    <div class="tab-btn" onclick="switchTab('request', this)">Request Body</div>
+                    <div class="tab-btn" onclick="switchTab('response', this)">Response Body</div>
+                    <div class="tab-btn" onclick="switchTab('timing', this)">Timing Waterfall</div>
                 </div>
 
-                <div class="tab-content" id="tab-content-area">
-                    <!-- Tab contents inserted here -->
+                <!-- Inspector Body Content -->
+                <div class="inspector-body" id="tab-content-area">
+                    <!-- Injected by renderTab() -->
                 </div>
             </div>
         </section>
@@ -203,6 +278,7 @@
         let selectedEvent = null;
         let activeFilter = 'ALL';
         let currentTab = 'overview';
+        let bodySearchTerm = '';
         let ws = null;
 
         function initWebSocket() {
@@ -221,11 +297,10 @@
                     if (Array.isArray(data)) {
                         allEvents = data;
                         renderList();
-                    } else if (data && data.id) {
-                        const idx = allEvents.findIndex(function(e) { return e.id === data.id; });
-                        if (idx >= 0) allEvents[idx] = data;
-                        else allEvents.unshift(data);
-                        renderList();
+                        if (selectedEvent) {
+                            const updated = allEvents.find(e => e.id === selectedEvent.id);
+                            if (updated) { selectedEvent = updated; renderTab(); }
+                        }
                     }
                 } catch(e) { console.error(e); }
             };
@@ -238,29 +313,28 @@
 
         function fetchInitialEvents() {
             fetch('/api/events')
-                .then(function(res) { return res.json(); })
-                .then(function(data) {
+                .then(res => res.json())
+                .then(data => {
                     allEvents = data || [];
                     renderList();
                 })
-                .catch(function(e) { console.error(e); });
+                .catch(e => console.error(e));
         }
 
         function setFilter(filter, el) {
             activeFilter = filter;
-            document.querySelectorAll('.filter-chips .chip').forEach(function(c) { c.classList.remove('active'); });
+            document.querySelectorAll('.filter-row .filter-chip').forEach(c => c.classList.remove('active'));
             el.classList.add('active');
             renderList();
         }
 
-        function filterRequests() { renderList(); }
-
         function renderList() {
             const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const sortBy = document.getElementById('sort-select').value;
             const container = document.getElementById('request-list-container');
-            document.getElementById('req-counter').textContent = allEvents.length + ' requests';
+            document.getElementById('req-counter').textContent = allEvents.length + ' transactions';
 
-            const filtered = allEvents.filter(function(e) {
+            let filtered = allEvents.filter(function(e) {
                 const matchesQuery = !query || e.url.toLowerCase().indexOf(query) >= 0 || (e.method && e.method.toLowerCase().indexOf(query) >= 0);
                 const code = e.statusCode || 0;
                 let matchesFilter = true;
@@ -270,6 +344,20 @@
                 else if (activeFilter === '5xx') matchesFilter = code >= 500 && code < 600;
                 else if (activeFilter === 'ERRORS') matchesFilter = code >= 400 || !!e.error;
                 return matchesQuery && matchesFilter;
+            });
+
+            // Sorting logic
+            filtered.sort(function(a, b) {
+                if (sortBy === 'newest') return b.timestamp - a.timestamp;
+                if (sortBy === 'oldest') return a.timestamp - b.timestamp;
+                if (sortBy === 'slowest') {
+                    const durA = (a.timing && a.timing.totalMs) || (a.timing && a.timing.endTimestamp && a.timing.startTimestamp ? a.timing.endTimestamp - a.timing.startTimestamp : 0);
+                    const durB = (b.timing && b.timing.totalMs) || (b.timing && b.timing.endTimestamp && b.timing.startTimestamp ? b.timing.endTimestamp - b.timing.startTimestamp : 0);
+                    return durB - durA;
+                }
+                if (sortBy === 'largest') return (b.responseSize || 0) - (a.responseSize || 0);
+                if (sortBy === 'status') return (b.statusCode || 0) - (a.statusCode || 0);
+                return 0;
             });
 
             if (filtered.length === 0) {
@@ -288,21 +376,23 @@
                 else if (code >= 400) statusClass = 'status-4xx';
                 else if (code >= 300) statusClass = 'status-3xx';
 
-                const duration = (e.timing && e.timing.endTimestamp && e.timing.startTimestamp) ? (e.timing.endTimestamp - e.timing.startTimestamp) + ' ms' : (e.duration ? e.duration + ' ms' : '-');
-                const size = formatBytes(e.responseSize || 0);
+                const durationVal = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? (e.timing.endTimestamp - e.timing.startTimestamp) : null);
+                const durationText = durationVal !== null ? durationVal + ' ms' : '-';
+                const sizeText = formatBytes(e.responseSize || 0);
+                const timeText = new Date(e.timestamp).toLocaleTimeString();
 
-                return '<div class="request-item ' + (isSelected ? 'selected' : '') + '" onclick="selectRequest(\'' + e.id + '\')">' +
-                    '<div class="req-line-1">' +
-                        '<div class="req-method-path">' +
+                return '<div class="request-row ' + (isSelected ? 'selected' : '') + '" onclick="selectRequest(\'' + e.id + '\')">' +
+                    '<div class="row-line-1">' +
+                        '<div class="row-left">' +
                             (isMock ? '<span class="status-mock">MOCK</span>' : '') +
                             '<span class="badge ' + methodClass + '">' + (e.method || 'GET') + '</span>' +
-                            '<span class="req-path">' + escapeHtml(e.path || e.url) + '</span>' +
+                            '<span class="row-path" title="' + escapeHtml(e.url) + '">' + escapeHtml(e.path || e.url) + '</span>' +
                         '</div>' +
-                        '<span class="status-badge ' + statusClass + '">' + (code > 0 ? code : (e.error ? 'ERR' : '...')) + '</span>' +
+                        '<span class="status-pill-badge ' + statusClass + '">' + (code > 0 ? code : (e.error ? 'ERR' : '...')) + '</span>' +
                     '</div>' +
-                    '<div class="req-line-2">' +
+                    '<div class="row-line-2">' +
                         '<span>' + escapeHtml(e.host || '') + '</span>' +
-                        '<span>' + duration + ' &bull; ' + size + '</span>' +
+                        '<span>' + timeText + ' &bull; ' + durationText + ' &bull; ' + sizeText + '</span>' +
                     '</div>' +
                 '</div>';
             }).join('');
@@ -316,22 +406,30 @@
             const activeView = document.getElementById('active-inspector-view');
             activeView.style.display = 'flex';
 
-            document.getElementById('detail-method-badge').textContent = selectedEvent.method || 'GET';
-            document.getElementById('detail-method-badge').className = 'badge badge-' + (selectedEvent.method ? selectedEvent.method.toLowerCase() : 'get');
-            document.getElementById('detail-path').textContent = selectedEvent.path || selectedEvent.url;
-            document.getElementById('detail-full-url').textContent = selectedEvent.url;
+            const e = selectedEvent;
+            document.getElementById('detail-method-badge').textContent = e.method || 'GET';
+            document.getElementById('detail-method-badge').className = 'badge badge-' + (e.method ? e.method.toLowerCase() : 'get');
+            document.getElementById('detail-path').textContent = e.path || e.url;
+            document.getElementById('detail-full-url').textContent = e.url;
 
-            const isMock = selectedEvent.responseHeaders && (selectedEvent.responseHeaders['X-Mocked-By'] || selectedEvent.responseHeaders['x-mocked-by']);
+            const isMock = e.responseHeaders && (e.responseHeaders['X-Mocked-By'] || e.responseHeaders['x-mocked-by']);
             document.getElementById('detail-mock-badge').style.display = isMock ? 'inline-block' : 'none';
 
-            const code = selectedEvent.statusCode || 0;
+            const code = e.statusCode || 0;
             const statusEl = document.getElementById('detail-status-badge');
-            statusEl.textContent = code > 0 ? (code + ' ' + (selectedEvent.statusMessage || 'OK')) : (selectedEvent.error ? 'FAILED' : 'In Progress');
+            statusEl.textContent = code > 0 ? (code + ' ' + (e.statusMessage || 'OK')) : (e.error ? 'FAILED' : 'In Progress');
             let statusClass = 'status-2xx';
-            if (code >= 500 || selectedEvent.error) statusClass = 'status-5xx';
+            if (code >= 500 || e.error) statusClass = 'status-5xx';
             else if (code >= 400) statusClass = 'status-4xx';
             else if (code >= 300) statusClass = 'status-3xx';
-            statusEl.className = 'status-badge ' + statusClass;
+            statusEl.className = 'status-pill-badge ' + statusClass;
+
+            const durationVal = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? (e.timing.endTimestamp - e.timing.startTimestamp) : null);
+            document.getElementById('stat-duration').textContent = durationVal !== null ? durationVal + ' ms' : '-';
+            document.getElementById('stat-req-size').textContent = formatBytes(e.requestSize || 0);
+            document.getElementById('stat-res-size').textContent = formatBytes(e.responseSize || 0);
+            document.getElementById('stat-timestamp').textContent = new Date(e.timestamp).toLocaleTimeString();
+            document.getElementById('stat-session').textContent = e.sessionName || e.sessionId || 'Default';
 
             renderTab();
             renderList();
@@ -339,7 +437,7 @@
 
         function switchTab(tab, el) {
             currentTab = tab;
-            document.querySelectorAll('.tab-bar .tab-item').forEach(function(t) { t.classList.remove('active'); });
+            document.querySelectorAll('.tab-strip .tab-btn').forEach(function(t) { t.classList.remove('active'); });
             el.classList.add('active');
             renderTab();
         }
@@ -350,56 +448,155 @@
             const e = selectedEvent;
 
             if (currentTab === 'overview') {
-                const duration = (e.timing && e.timing.endTimestamp && e.timing.startTimestamp) ? (e.timing.endTimestamp - e.timing.startTimestamp) + ' ms' : '-';
-                area.innerHTML = '<div class="section-title">General Information</div>' +
-                    '<table class="kv-table">' +
-                        '<tr><td>Request URL</td><td>' + escapeHtml(e.url) + '</td></tr>' +
-                        '<tr><td>Request Method</td><td>' + (e.method || 'GET') + '</td></tr>' +
-                        '<tr><td>Status Code</td><td>' + (e.statusCode || '-') + ' ' + escapeHtml(e.statusMessage || '') + '</td></tr>' +
-                        '<tr><td>Duration</td><td>' + duration + '</td></tr>' +
-                        '<tr><td>Request Size</td><td>' + formatBytes(e.requestSize || 0) + '</td></tr>' +
-                        '<tr><td>Response Size</td><td>' + formatBytes(e.responseSize || 0) + '</td></tr>' +
-                        '<tr><td>Session</td><td>' + escapeHtml(e.sessionName || e.sessionId || 'Default') + '</td></tr>' +
-                    '</table>' +
-                    '<div class="section-title">Response Body Preview</div>' +
-                    '<div class="code-block">' + formatBody(e.responseBody) + '</div>';
-            } else if (currentTab === 'request') {
-                let headersRows = '';
+                const duration = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? (e.timing.endTimestamp - e.timing.startTimestamp) : null);
+                
+                let errorBanner = '';
+                if (e.error) {
+                    errorBanner = '<div style="background: var(--accent-red-bg); border: 1px solid var(--accent-red); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; color: var(--accent-red);">' +
+                        '<div style="font-weight: 700; margin-bottom: 4px;">⚠️ Network Failure: ' + escapeHtml(e.error.type || 'UNKNOWN') + '</div>' +
+                        '<div style="font-size: 12px;">' + escapeHtml(e.error.message || 'No error message provided') + '</div>' +
+                    '</div>';
+                }
+
+                area.innerHTML = errorBanner +
+                    '<div class="section-header">General Information</div>' +
+                    '<div class="table-card">' +
+                        '<table class="data-table">' +
+                            '<tr><td class="key-col">Request URL</td><td class="val-col">' + escapeHtml(e.url) + '</td></tr>' +
+                            '<tr><td class="key-col">Request Method</td><td class="val-col">' + (e.method || 'GET') + '</td></tr>' +
+                            '<tr><td class="key-col">Status</td><td class="val-col">' + (e.statusCode || '-') + ' ' + escapeHtml(e.statusMessage || '') + '</td></tr>' +
+                            '<tr><td class="key-col">Protocol</td><td class="val-col">' + (e.protocol || 'HTTP/1.1') + '</td></tr>' +
+                            '<tr><td class="key-col">Host</td><td class="val-col">' + escapeHtml(e.host || '-') + '</td></tr>' +
+                            '<tr><td class="key-col">Path</td><td class="val-col">' + escapeHtml(e.path || '-') + '</td></tr>' +
+                            '<tr><td class="key-col">Duration</td><td class="val-col">' + (duration !== null ? duration + ' ms' : '-') + '</td></tr>' +
+                        '</table>' +
+                    '</div>' +
+                    '<div class="section-header">Response Body Preview</div>' +
+                    renderCodeCard(e.responseBody, 'response-overview');
+            } else if (currentTab === 'headers') {
+                let reqRows = '', resRows = '', queryRows = '';
+                
+                if (e.queryParameters && Object.keys(e.queryParameters).length > 0) {
+                    for (const k in e.queryParameters) {
+                        const v = e.queryParameters[k];
+                        queryRows += '<tr><td class="key-col">' + escapeHtml(k) + '</td><td class="val-col">' + escapeHtml(Array.isArray(v) ? v.join(', ') : v) + '</td></tr>';
+                    }
+                }
+
                 if (e.requestHeaders) {
                     for (const k in e.requestHeaders) {
                         const v = e.requestHeaders[k];
-                        headersRows += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(Array.isArray(v) ? v.join(', ') : v) + '</td></tr>';
+                        reqRows += '<tr><td class="key-col">' + escapeHtml(k) + '</td><td class="val-col">' + escapeHtml(Array.isArray(v) ? v.join(', ') : v) + '</td></tr>';
                     }
                 }
-                area.innerHTML = '<div class="section-title">Request Headers</div>' +
-                    '<table class="kv-table">' + (headersRows || '<tr><td colspan="2">No Headers</td></tr>') + '</table>' +
-                    '<div class="section-title">Request Body</div>' +
-                    '<div class="code-block">' + formatBody(e.requestBody) + '</div>';
-            } else if (currentTab === 'response') {
-                let headersRows = '';
+
                 if (e.responseHeaders) {
                     for (const k in e.responseHeaders) {
                         const v = e.responseHeaders[k];
-                        headersRows += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(Array.isArray(v) ? v.join(', ') : v) + '</td></tr>';
+                        resRows += '<tr><td class="key-col">' + escapeHtml(k) + '</td><td class="val-col">' + escapeHtml(Array.isArray(v) ? v.join(', ') : v) + '</td></tr>';
                     }
                 }
-                area.innerHTML = '<div class="section-title">Response Headers</div>' +
-                    '<table class="kv-table">' + (headersRows || '<tr><td colspan="2">No Headers</td></tr>') + '</table>' +
-                    '<div class="section-title">Response Body</div>' +
-                    '<div class="code-block">' + formatBody(e.responseBody) + '</div>';
+
+                area.innerHTML = (queryRows ? '<div class="section-header">Query Parameters</div><div class="table-card"><table class="data-table">' + queryRows + '</table></div>' : '') +
+                    '<div class="section-header">Request Headers (' + (e.requestHeaders ? Object.keys(e.requestHeaders).length : 0) + ')</div>' +
+                    '<div class="table-card"><table class="data-table">' + (reqRows || '<tr><td colspan="2" style="color: var(--text-muted); text-align: center;">No Request Headers</td></tr>') + '</table></div>' +
+                    '<div class="section-header">Response Headers (' + (e.responseHeaders ? Object.keys(e.responseHeaders).length : 0) + ')</div>' +
+                    '<div class="table-card"><table class="data-table">' + (resRows || '<tr><td colspan="2" style="color: var(--text-muted); text-align: center;">No Response Headers</td></tr>') + '</table></div>';
+            } else if (currentTab === 'request') {
+                let querySection = '';
+                if (e.queryParameters && Object.keys(e.queryParameters).length > 0) {
+                    let queryRows = '';
+                    for (const k in e.queryParameters) {
+                        const v = e.queryParameters[k];
+                        queryRows += '<tr><td class="key-col">' + escapeHtml(k) + '</td><td class="val-col">' + escapeHtml(Array.isArray(v) ? v.join(', ') : v) + '</td></tr>';
+                    }
+                    querySection = '<div class="section-header">Query Parameters</div><div class="table-card"><table class="data-table">' + queryRows + '</table></div>';
+                }
+
+                area.innerHTML = querySection +
+                    '<div class="section-header">Request Payload (' + formatBytes(e.requestSize || 0) + ')</div>' +
+                    renderCodeCard(e.requestBody, 'req-body');
+            } else if (currentTab === 'response') {
+                area.innerHTML = '<div class="section-header">Response Payload (' + formatBytes(e.responseSize || 0) + ')</div>' +
+                    renderCodeCard(e.responseBody, 'res-body');
             } else if (currentTab === 'timing') {
                 const t = e.timing || {};
-                area.innerHTML = '<div class="section-title">Timing Waterfall Breakdown</div>' +
-                    '<table class="kv-table">' +
-                        '<tr><td>DNS Lookup</td><td>' + (t.dnsMs ? t.dnsMs + ' ms' : '-') + '</td></tr>' +
-                        '<tr><td>TCP Connect</td><td>' + (t.connectMs ? t.connectMs + ' ms' : '-') + '</td></tr>' +
-                        '<tr><td>TLS Handshake</td><td>' + (t.tlsMs ? t.tlsMs + ' ms' : '-') + '</td></tr>' +
-                        '<tr><td>Waiting (TTFB)</td><td>' + (t.waitingMs ? t.waitingMs + ' ms' : '-') + '</td></tr>' +
-                        '<tr><td>Download</td><td>' + (t.downloadMs ? t.downloadMs + ' ms' : '-') + '</td></tr>' +
-                    '</table>';
+                const total = t.totalMs || (t.endTimestamp && t.startTimestamp ? t.endTimestamp - t.startTimestamp : 1);
+                
+                function renderTimingBar(label, ms) {
+                    if (ms === undefined || ms === null) return '';
+                    const pct = Math.max(4, Math.min(100, Math.round((ms / total) * 100)));
+                    return '<div class="timing-row">' +
+                        '<div class="timing-label">' + label + '</div>' +
+                        '<div class="timing-bar-container"><div class="timing-bar-fill" style="width: ' + pct + '%;"></div></div>' +
+                        '<div class="timing-val">' + ms + ' ms</div>' +
+                    '</div>';
+                }
+
+                area.innerHTML = '<div class="section-header">Detailed Timing Breakdown</div>' +
+                    '<div class="table-card">' +
+                        renderTimingBar('DNS Lookup', t.dnsMs) +
+                        renderTimingBar('TCP Connect', t.connectMs) +
+                        renderTimingBar('TLS Handshake', t.tlsMs) +
+                        renderTimingBar('Waiting (TTFB)', t.waitingMs) +
+                        renderTimingBar('Content Download', t.downloadMs) +
+                        '<div class="timing-row" style="background: var(--bg-card); font-weight: 700;">' +
+                            '<div class="timing-label" style="color: var(--text-main);">Total Duration</div>' +
+                            '<div class="timing-bar-container"><div class="timing-bar-fill" style="width: 100%; background: var(--accent-green);"></div></div>' +
+                            '<div class="timing-val" style="color: var(--accent-green);">' + (total > 1 ? total : 0) + ' ms</div>' +
+                        '</div>' +
+                    '</div>';
             }
         }
 
+        function renderCodeCard(bodyObj, cardId) {
+            if (!bodyObj || !bodyObj.content) {
+                return '<div class="code-container"><div class="code-content" style="color: var(--text-muted); text-align: center; padding: 30px;">(No body payload)</div></div>';
+            }
+
+            const rawContent = bodyObj.content;
+            let formattedContent = rawContent;
+            let isJson = false;
+
+            try {
+                const parsed = JSON.parse(rawContent);
+                formattedContent = JSON.stringify(parsed, null, 2);
+                isJson = true;
+            } catch(e) { }
+
+            const highlighted = isJson ? highlightJson(formattedContent) : escapeHtml(formattedContent);
+
+            return '<div class="code-container" id="card-' + cardId + '">' +
+                '<div class="code-header">' +
+                    '<span>' + (isJson ? 'JSON' : (bodyObj.contentType || 'Text')) + ' &bull; ' + formatBytes(bodyObj.size || 0) + '</span>' +
+                    '<div class="code-controls">' +
+                        '<button class="mini-copy-btn" onclick="copyText(`' + escapeBackticks(rawContent) + '`, \'Payload copied!\')">📋 Copy</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="code-content">' + highlighted + '</div>' +
+            '</div>';
+        }
+
+        function highlightJson(jsonStr) {
+            const escaped = escapeHtml(jsonStr);
+            return escaped.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        // Productivity Actions
         function copyCurlCommand() {
             if (!selectedEvent) return;
             const e = selectedEvent;
@@ -413,13 +610,13 @@
             if (e.requestBody && e.requestBody.content) {
                 curl += ' \\\n  -d \'' + e.requestBody.content.replace(/'/g, "\\'") + '\'';
             }
-            navigator.clipboard.writeText(curl).then(function() { showToast('cURL command copied to clipboard!'); });
+            copyText(curl, 'cURL command copied to clipboard!');
         }
 
         function copyJiraMarkdown() {
             if (!selectedEvent) return;
             const e = selectedEvent;
-            const duration = (e.timing && e.timing.endTimestamp && e.timing.startTimestamp) ? (e.timing.endTimestamp - e.timing.startTimestamp) + ' ms' : '-';
+            const duration = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? (e.timing.endTimestamp - e.timing.startTimestamp) : '-');
             const isError = (e.statusCode && e.statusCode >= 400) || !!e.error;
 
             let jira = 'h3. 🐛 Bug Report: ' + e.method + ' ' + (e.path || e.url) + '\n\n';
@@ -430,7 +627,7 @@
 
             jira += 'h4. 📡 Network Call Details\n';
             jira += '* *Endpoint:* ' + (isError ? '{color:red}*' : '*') + e.method + ' ' + (e.path || e.url) + (isError ? '*{color}' : '*') + '\n';
-            jira += '* *Status:* ' + (isError ? '{color:red}*' : '*') + (e.statusCode || 'FAILED') + ' ' + (e.statusMessage || '') + (isError ? '*{color}' : '*') + ' (' + duration + ')\n\n';
+            jira += '* *Status:* ' + (isError ? '{color:red}*' : '*') + (e.statusCode || 'FAILED') + ' ' + (e.statusMessage || '') + (isError ? '*{color}' : '*') + ' (' + duration + ' ms)\n\n';
 
             jira += '*cURL Command:*\n{code:bash}\n';
             jira += 'curl -X ' + (e.method || 'GET') + ' \'' + e.url + '\'';
@@ -449,7 +646,22 @@
                 jira += '*Response Payload:*\n{code:json}\n' + e.responseBody.content + '\n{code}\n';
             }
 
-            navigator.clipboard.writeText(jira).then(function() { showToast('Jira Markdown copied to clipboard!'); });
+            copyText(jira, 'Jira Markdown copied to clipboard!');
+        }
+
+        function copySlackMarkdown() {
+            if (!selectedEvent) return;
+            const e = selectedEvent;
+            const duration = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? (e.timing.endTimestamp - e.timing.startTimestamp) : '-');
+            
+            let md = `*🐛 Bug Report: ${e.method} ${e.path || e.url}*\n`;
+            md += `• *Status:* ${e.statusCode || 'FAILED'} ${e.statusMessage || ''} (${duration} ms)\n`;
+            md += `• *Timestamp:* ${new Date(e.timestamp).toLocaleTimeString()}\n\n`;
+            md += `*cURL:*\n\`\`\`bash\ncurl -X ${e.method || 'GET'} '${e.url}'\n\`\`\`\n`;
+            if (e.responseBody && e.responseBody.content) {
+                md += `*Response Body:*\n\`\`\`json\n${e.responseBody.content}\n\`\`\`\n`;
+            }
+            copyText(md, 'Slack / GitHub Markdown copied!');
         }
 
         function downloadSingleHar() {
@@ -464,7 +676,7 @@
         function clearAllRequests() {
             if (!confirm('Clear all captured network traffic?')) return;
             fetch('/api/events', { method: 'DELETE' })
-                .then(function() {
+                .then(() => {
                     allEvents = [];
                     selectedEvent = null;
                     document.getElementById('empty-inspector-view').style.display = 'flex';
@@ -472,7 +684,11 @@
                     renderList();
                     showToast('Traffic cleared');
                 })
-                .catch(function(e) { console.error(e); });
+                .catch(e => console.error(e));
+        }
+
+        function copyText(text, successMsg) {
+            navigator.clipboard.writeText(text).then(() => showToast(successMsg || 'Copied to clipboard!'));
         }
 
         function formatBytes(bytes) {
@@ -483,26 +699,21 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
         }
 
-        function formatBody(bodyObj) {
-            if (!bodyObj || !bodyObj.content) return '<span style="color: var(--text-muted);">(No body payload)</span>';
-            try {
-                const parsed = JSON.parse(bodyObj.content);
-                return escapeHtml(JSON.stringify(parsed, null, 2));
-            } catch(e) {
-                return escapeHtml(bodyObj.content);
-            }
-        }
-
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function escapeBackticks(str) {
+            if (!str) return '';
+            return String(str).replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
         }
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
             toast.textContent = msg;
             toast.style.display = 'block';
-            setTimeout(function() { toast.style.display = 'none'; }, 3000);
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
         window.onload = initWebSocket;

@@ -101,7 +101,7 @@ object TraceaWebServer {
                     // 3. Transactions List
                     get("/api/events") {
                         val events = store?.getAll()?.first() ?: emptyList()
-                        val eventsJson = json.encodeToString(events)
+                        val eventsJson = NetworkEventJsonSerializer.serializeList(events).toString()
                         call.respondText(eventsJson, ContentType.Application.Json)
                     }
 
@@ -114,7 +114,8 @@ object TraceaWebServer {
                         }
                         val event = store?.get(id)
                         if (event != null) {
-                            call.respondText(json.encodeToString(event), ContentType.Application.Json)
+                            val eventJson = NetworkEventJsonSerializer.serialize(event).toString()
+                            call.respondText(eventJson, ContentType.Application.Json)
                         } else {
                             call.respond(HttpStatusCode.NotFound, "Transaction not found")
                         }
@@ -147,18 +148,29 @@ object TraceaWebServer {
                     // 7. Real-Time WebSocket Traffic Stream
                     webSocket("/ws/traffic") {
                         _connectedClientsCount.value++
+                        var streamingJob: kotlinx.coroutines.Job? = null
                         try {
-                            // Send initial dump
+                            // Send initial snapshot
                             val initialEvents = store?.getAll()?.first() ?: emptyList()
-                            send(Frame.Text(json.encodeToString(initialEvents)))
+                            val initialJson = NetworkEventJsonSerializer.serializeList(initialEvents).toString()
+                            send(Frame.Text(initialJson))
 
-                            // Stream subsequent changes
-                            store?.getAll()?.collect { updatedEvents ->
-                                send(Frame.Text(json.encodeToString(updatedEvents)))
+                            // Launch coroutine to stream ongoing updates
+                            streamingJob = launch {
+                                store?.getAll()?.collect { updatedEvents ->
+                                    val updatedJson = NetworkEventJsonSerializer.serializeList(updatedEvents).toString()
+                                    send(Frame.Text(updatedJson))
+                                }
+                            }
+
+                            // Keep connection open by listening for incoming frames / pings from client
+                            for (frame in incoming) {
+                                // Consuming incoming frames prevents Ktor from closing the socket
                             }
                         } catch (e: Exception) {
-                            // Client disconnected
+                            // Client disconnected normally or error
                         } finally {
+                            streamingJob?.cancel()
                             _connectedClientsCount.value = (_connectedClientsCount.value - 1).coerceAtLeast(0)
                         }
                     }

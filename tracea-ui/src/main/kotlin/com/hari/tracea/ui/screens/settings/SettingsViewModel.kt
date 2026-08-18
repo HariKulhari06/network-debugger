@@ -43,6 +43,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setFloatingButton(enabled: Boolean) {
         _floatingButton.value = enabled
         prefs.edit().putBoolean("floating_button", enabled).apply()
+        com.hari.tracea.ui.overlay.FloatingButtonManager.setEnabled(enabled)
     }
 
     fun setCaptureRequests(enabled: Boolean) {

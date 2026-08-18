@@ -12,6 +12,7 @@ class DemoApplication : Application() {
             context = this,
             config = TraceaConfig(
                 enabled = BuildConfig.DEBUG,
+                showFloatingButton = true,
                 redactionConfig = RedactionConfig(
                     sensitiveHeaders = setOf("Authorization", "Cookie", "Set-Cookie", "Proxy-Authorization", "X-API-Key"),
                     sensitiveJsonFields = setOf("password", "token", "access_token", "refresh_token", "secret", "client_secret", "api_key")

@@ -1064,7 +1064,7 @@
                 jiraDomain = jiraDomain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
             }
 
-            const project = (document.getElementById('jira-project-input').value.trim() || localStorage.getItem('tracea_jira_project') || '').toUpperCase();
+            const project = (document.getElementById('jira-project-input').value.trim() || localStorage.getItem('tracea_jira_project') || '').trim();
             const sessionEvents = allEvents.filter(e => (e.sessionName || e.sessionId || 'Default Session') === currentModalSession);
             const firstError = sessionEvents.find(e => (e.statusCode && e.statusCode >= 400) || !!e.error);
 
@@ -1085,15 +1085,23 @@
             // 3. Auto-download session HAR file
             downloadModalSessionHar();
 
-            // 4. Build Jira pre-filled URL and open in new tab
-            let jiraUrl = `https://${jiraDomain}/secure/CreateIssueDetails!init.jspa?summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}&issuetype=1`;
-            if (project) {
-                jiraUrl += `&pid=${encodeURIComponent(project)}`;
+            // 4. Build universal Jira URL
+            // Using CreateIssue!default.jspa avoids "You have not selected a valid project" error
+            let jiraUrl;
+            if (/^\d+$/.test(project)) {
+                // Numeric Project ID (e.g. 10000)
+                jiraUrl = `https://${jiraDomain}/secure/CreateIssueDetails!init.jspa?pid=${encodeURIComponent(project)}&issuetype=1&summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
+            } else if (project) {
+                // Alphanumeric Project Key (e.g. MOB)
+                jiraUrl = `https://${jiraDomain}/secure/CreateIssue!default.jspa?project=${encodeURIComponent(project)}&summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
+            } else {
+                // No Project specified - opens Jira Create dialog with user's default/last-used project
+                jiraUrl = `https://${jiraDomain}/secure/CreateIssue!default.jspa?summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
             }
 
             window.open(jiraUrl, '_blank');
 
-            showToast('🚀 Jira opened in new tab! Screenshot copied to clipboard (press Cmd+V in Jira to attach) and files downloaded.');
+            showToast('🚀 Jira opened! Screenshot copied to clipboard (press Cmd+V/Ctrl+V in Jira to attach) and files downloaded.');
         }
 
         function copyScreenshotToClipboard(showFeedback = true) {

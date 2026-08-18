@@ -61,8 +61,10 @@
         .left-pane { width: 42%; min-width: 360px; max-width: 600px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; background: var(--bg-surface); }
         .toolbar { padding: 10px 14px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); }
         .search-row { display: flex; gap: 8px; align-items: center; }
-        .search-box { flex: 1; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 7px; padding: 7px 12px; color: var(--text-main); font-size: 12px; outline: none; transition: border-color 0.15s; }
+        .search-box-wrapper { flex: 1; position: relative; display: flex; align-items: center; }
+        .search-box { width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 7px; padding: 7px 28px 7px 12px; color: var(--text-main); font-size: 12px; outline: none; transition: border-color 0.15s; }
         .search-box:focus { border-color: var(--primary); }
+        .search-clear-btn { position: absolute; right: 8px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; display: none; }
         .select-filter { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 7px; padding: 6px 8px; font-size: 11px; font-weight: 600; outline: none; cursor: pointer; max-width: 140px; }
 
         .filter-row { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; }
@@ -127,8 +129,8 @@
         .stat-item { display: flex; align-items: center; gap: 5px; }
         .stat-val { color: var(--text-main); font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 
-        /* Action Toolbar */
-        .actions-strip { display: flex; gap: 8px; padding: 8px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); flex-wrap: wrap; }
+        /* Clean Technical Action Toolbar (Focused on cURL, HAR, URL) */
+        .actions-strip { display: flex; gap: 8px; padding: 8px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); flex-wrap: wrap; align-items: center; }
         .action-chip-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s; }
         .action-chip-btn:hover { background: var(--bg-card-hover); border-color: var(--primary); color: var(--primary); }
         .action-chip-btn.highlight { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -203,7 +205,7 @@
 
         .modal-body { display: flex; flex: 1; overflow: hidden; }
         .modal-left-pane { width: 45%; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; background: var(--bg-base); padding: 16px; gap: 12px; }
-        .canvas-toolbar { display: flex; align-items: center; justify-content: space-between; }
+        .canvas-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
         .canvas-container { flex: 1; background: #000; border: 1px solid var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
         #screenshot-canvas { max-width: 100%; max-height: 100%; object-fit: contain; cursor: crosshair; }
 
@@ -244,7 +246,10 @@
         <section class="left-pane">
             <div class="toolbar">
                 <div class="search-row">
-                    <input type="text" id="search-input" class="search-box" placeholder="Filter by URL, host, method..." oninput="renderList()">
+                    <div class="search-box-wrapper">
+                        <input type="text" id="search-input" class="search-box" placeholder="Filter by URL, host, method..." oninput="onSearchInput()">
+                        <button class="search-clear-btn" id="search-clear-btn" onclick="clearSearch()">✖</button>
+                    </div>
                     <select id="session-select" class="select-filter" onchange="renderList()">
                         <option value="ALL">📅 All Sessions</option>
                     </select>
@@ -292,7 +297,7 @@
 
                     <div class="detail-url-box">
                         <span class="detail-url-text" id="detail-full-url"></span>
-                        <button class="mini-copy-btn" onclick="copyText(selectedEvent ? selectedEvent.url : '', 'URL copied!')">📋 Copy</button>
+                        <button class="mini-copy-btn" onclick="copyText(selectedEvent ? selectedEvent.url : '', 'URL copied!')">📋 Copy URL</button>
                     </div>
 
                     <div class="stats-strip">
@@ -304,12 +309,11 @@
                     </div>
                 </div>
 
-                <!-- 1-Click Laptop Actions Toolbar -->
+                <!-- Clean Technical Action Toolbar (Focused on cURL, HAR, Session View) -->
                 <div class="actions-strip">
-                    <button class="action-chip-btn highlight" onclick="copyJiraMarkdown()">🐛 Copy Jira Markdown</button>
-                    <button class="action-chip-btn" onclick="copySlackMarkdown()">💬 Copy Slack / Markdown</button>
-                    <button class="action-chip-btn" onclick="copyCurlCommand()">📋 Copy as cURL</button>
+                    <button class="action-chip-btn highlight" onclick="copyCurlCommand()">📋 Copy as cURL</button>
                     <button class="action-chip-btn" onclick="downloadSingleHar()">📦 Export Single HAR</button>
+                    <button class="action-chip-btn" onclick="openParentSessionModal()">🐛 Generate Session Bug Report</button>
                 </div>
 
                 <!-- Tabs Strip -->
@@ -343,11 +347,13 @@
                 <!-- Left: Live Screenshot & Markup Canvas -->
                 <div class="modal-left-pane">
                     <div class="canvas-toolbar">
-                        <span style="font-weight: 700; color: var(--text-main); font-size: 12px;">📱 Mobile Screen Markup</span>
-                        <div style="display: flex; gap: 6px;">
-                            <button class="session-btn" onclick="refreshModalScreenshot()">🔄 Refresh</button>
-                            <button class="session-btn" onclick="clearCanvasMarkup()">🧹 Clear</button>
-                            <button class="session-btn" onclick="copyScreenshotToClipboard()">📋 Copy Image</button>
+                        <span style="font-weight: 700; color: var(--text-main); font-size: 12px;">📱 Screen Markup</span>
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <button class="session-btn" id="pen-red-btn" style="color: #F07178; font-weight: 700;" onclick="setPenColor('#F07178')">🔴 Pen</button>
+                            <button class="session-btn" id="pen-yellow-btn" style="color: #FFCB6B;" onclick="setPenColor('#FFCB6B')">🟡 Highlight</button>
+                            <button class="session-btn" onclick="undoCanvasStroke()">↩️</button>
+                            <button class="session-btn" onclick="clearCanvasMarkup()">🧹</button>
+                            <button class="session-btn" onclick="refreshModalScreenshot()">🔄</button>
                             <button class="session-btn" onclick="downloadAnnotatedScreenshot()">💾 Save</button>
                         </div>
                     </div>
@@ -359,18 +365,18 @@
                 <!-- Right: Formatted Markdown & Timeline Preview -->
                 <div class="modal-right-pane">
                     <div class="jira-config-box" style="flex-wrap: wrap;">
-                        <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 240px;">
+                        <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 220px;">
                             <span style="font-weight: 600; color: var(--text-muted);">🏢 Domain:</span>
                             <input type="text" id="jira-domain-input" class="jira-config-input" placeholder="e.g. company.atlassian.net" onchange="saveJiraConfig()">
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="font-weight: 600; color: var(--text-muted);" title="Numeric Project ID like 10000 or Key like MOB">Project ID / Key:</span>
+                            <span style="font-weight: 600; color: var(--text-muted);" title="Numeric Project ID like 10000 or Key like MOB">Project PID / Key:</span>
                             <input type="text" id="jira-project-input" class="jira-config-input" style="max-width: 100px;" placeholder="10000 / MOB" onchange="saveJiraConfig()">
                         </div>
                     </div>
 
                     <div class="format-switch-row">
-                        <span style="font-weight: 700; color: var(--text-main); font-size: 12px;">📋 Clean Timeline & Description</span>
+                        <span style="font-weight: 700; color: var(--text-main); font-size: 12px;">📋 Clean Timeline & Diagnostics</span>
                         <div style="display: flex; gap: 6px;">
                             <button class="session-btn active" id="format-jira-btn" onclick="setModalFormat('jira')">Jira Format</button>
                             <button class="session-btn" id="format-md-btn" onclick="setModalFormat('markdown')">Markdown / Slack</button>
@@ -413,6 +419,9 @@
         let bgImage = new Image();
         let isDrawing = false;
         let lastX = 0, lastY = 0;
+        let currentColor = '#F07178';
+        let currentLineWidth = 8;
+        let strokeHistory = [];
 
         function initWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -474,6 +483,18 @@
             select.value = currentSelected || 'ALL';
         }
 
+        function onSearchInput() {
+            const val = document.getElementById('search-input').value;
+            document.getElementById('search-clear-btn').style.display = val ? 'block' : 'none';
+            renderList();
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('search-clear-btn').style.display = 'none';
+            renderList();
+        }
+
         function setFilter(filter, el) {
             activeFilter = filter;
             document.querySelectorAll('.filter-row .filter-chip').forEach(c => c.classList.remove('active'));
@@ -486,7 +507,6 @@
             const sessionFilter = document.getElementById('session-select').value;
             const sortBy = document.getElementById('sort-select').value;
             const container = document.getElementById('request-list-container');
-            document.getElementById('req-counter').textContent = allEvents.length + ' transactions';
 
             let filtered = allEvents.filter(function(e) {
                 const matchesQuery = !query || e.url.toLowerCase().indexOf(query) >= 0 || (e.method && e.method.toLowerCase().indexOf(query) >= 0);
@@ -502,6 +522,8 @@
                 else if (activeFilter === 'ERRORS') matchesFilter = code >= 400 || !!e.error;
                 return matchesQuery && matchesSession && matchesFilter;
             });
+
+            document.getElementById('req-counter').textContent = filtered.length + ' / ' + allEvents.length + ' transactions';
 
             filtered.sort(function(a, b) {
                 if (sortBy === 'newest') return b.timestamp - a.timestamp;
@@ -540,7 +562,7 @@
                             '<span class="session-caret ' + (isCollapsed ? 'collapsed' : '') + '">▼</span>' +
                             '<span class="session-name-label">' + escapeHtml(sName) + '</span>' +
                             '<span class="session-count-tag">' + countText + '</span>' +
-                            (hasErrors ? '<span style="color: var(--accent-red); font-size: 11px;">⚠️</span>' : '') +
+                            (hasErrors ? '<span style="color: var(--accent-red); font-size: 11px;" title="Contains failed requests">⚠️</span>' : '') +
                         '</div>' +
                         '<div class="session-actions-group">' +
                             '<button class="session-btn jira-btn" onclick="openJiraBugModal(\'' + escapeBackticks(sName) + '\')">🐛 Jira Report</button>' +
@@ -631,6 +653,12 @@
 
             renderTab();
             renderList();
+        }
+
+        function openParentSessionModal() {
+            if (!selectedEvent) return;
+            const sName = selectedEvent.sessionName || selectedEvent.sessionId || 'Default Session';
+            openJiraBugModal(sName);
         }
 
         function switchTab(tab, el) {
@@ -1053,7 +1081,7 @@
             return r;
         }
 
-        /* 🚀 1-Click Automated Jira Flow: Opens Jira Tab First (Bypasses Popup Blocker), Auto-Copies Description, and Staggers Downloads */
+        /* 🚀 1-Click Automated Jira Flow */
         function openJiraPrefilledTab() {
             try {
                 saveJiraConfig();
@@ -1143,6 +1171,7 @@
                 canvas.width = bgImage.width;
                 canvas.height = bgImage.height;
                 ctx.drawImage(bgImage, 0, 0);
+                strokeHistory = [ctx.getImageData(0, 0, canvas.width, canvas.height)];
             };
             bgImage.onerror = function() {
                 canvas.width = 400;
@@ -1153,7 +1182,14 @@
                 ctx.font = '14px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('📱 Mobile screen preview', canvas.width / 2, canvas.height / 2);
+                strokeHistory = [ctx.getImageData(0, 0, canvas.width, canvas.height)];
             };
+        }
+
+        function setPenColor(color) {
+            currentColor = color;
+            document.getElementById('pen-red-btn').style.fontWeight = color === '#F07178' ? '700' : '500';
+            document.getElementById('pen-yellow-btn').style.fontWeight = color === '#FFCB6B' ? '700' : '500';
         }
 
         function setupCanvasDrawing() {
@@ -1177,8 +1213,8 @@
                 ctx.beginPath();
                 ctx.moveTo(lastX, lastY);
                 ctx.lineTo(currentX, currentY);
-                ctx.strokeStyle = '#F07178';
-                ctx.lineWidth = 8;
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentColor === '#FFCB6B' ? 14 : 8;
                 ctx.lineCap = 'round';
                 ctx.stroke();
 
@@ -1186,8 +1222,21 @@
                 lastY = currentY;
             };
 
-            canvas.onmouseup = function() { isDrawing = false; };
+            canvas.onmouseup = function() {
+                if (isDrawing) {
+                    isDrawing = false;
+                    strokeHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+                }
+            };
             canvas.onmouseleave = function() { isDrawing = false; };
+        }
+
+        function undoCanvasStroke() {
+            if (strokeHistory.length > 1) {
+                strokeHistory.pop();
+                const prevState = strokeHistory[strokeHistory.length - 1];
+                ctx.putImageData(prevState, 0, 0);
+            }
         }
 
         function clearCanvasMarkup() {
@@ -1195,18 +1244,35 @@
             if (bgImage.complete && bgImage.naturalWidth > 0) {
                 ctx.drawImage(bgImage, 0, 0);
             }
+            strokeHistory = [ctx.getImageData(0, 0, canvas.width, canvas.height)];
         }
 
         function downloadAnnotatedScreenshot() {
-            const link = document.createElement('a');
-            link.download = 'tracea_screenshot_' + Date.now() + '.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            try {
+                const link = document.createElement('a');
+                link.download = 'tracea_screenshot_' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => document.body.removeChild(link), 100);
+            } catch(e) {
+                const link = document.createElement('a');
+                link.download = 'tracea_screenshot_' + Date.now() + '.png';
+                link.href = '/api/device/screenshot?t=' + Date.now();
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => document.body.removeChild(link), 100);
+            }
         }
 
         function downloadModalSessionHar() {
             if (!currentModalSession) return;
-            exportSessionHar(currentModalSession);
+            const link = document.createElement('a');
+            link.download = 'tracea_session_' + Date.now() + '.har';
+            link.href = '/api/export/har?sessionId=' + encodeURIComponent(currentModalSession);
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => document.body.removeChild(link), 100);
         }
 
         function copyModalMarkdown() {
@@ -1229,57 +1295,6 @@
                 curl += ' \\\n  -d \'' + e.requestBody.content.replace(/'/g, "\\'") + '\'';
             }
             copyText(curl, 'cURL command copied to clipboard!');
-        }
-
-        function copyJiraMarkdown() {
-            if (!selectedEvent) return;
-            const e = selectedEvent;
-            const duration = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? (e.timing.endTimestamp - e.timing.startTimestamp) : '-');
-            const isError = (e.statusCode && e.statusCode >= 400) || !!e.error;
-
-            let jira = 'h3. 🐛 Bug Report: ' + e.method + ' ' + (e.path || e.url) + '\n\n';
-            jira += 'h4. 📱 Environment Details\n';
-            jira += '|| Property || Value ||\n';
-            jira += '| *Session* | ' + (e.sessionName || 'Default Session') + ' |\n';
-            jira += '| *Timestamp* | ' + new Date(e.timestamp).toLocaleString() + ' |\n\n';
-
-            jira += 'h4. 📡 Network Call Details\n';
-            jira += '* *Endpoint:* ' + (isError ? '{color:red}*' : '*') + e.method + ' ' + (e.path || e.url) + (isError ? '*{color}' : '*') + '\n';
-            jira += '* *Status:* ' + (isError ? '{color:red}*' : '*') + (e.statusCode || 'FAILED') + ' ' + (e.statusMessage || '') + (isError ? '*{color}' : '*') + ' (' + duration + ' ms)\n\n';
-
-            jira += '*cURL Command:*\n{code:bash}\n';
-            jira += 'curl -X ' + (e.method || 'GET') + ' \'' + e.url + '\'';
-            if (e.requestHeaders) {
-                for (const k in e.requestHeaders) {
-                    const v = e.requestHeaders[k];
-                    jira += ' \\\n  -H \'' + k + ': ' + (Array.isArray(v) ? v.join(', ') : v) + '\'';
-                }
-            }
-            if (e.requestBody && e.requestBody.content) {
-                jira += ' \\\n  -d \'' + e.requestBody.content + '\'';
-            }
-            jira += '\n{code}\n\n';
-
-            if (e.responseBody && e.responseBody.content) {
-                jira += '*Response Payload:*\n{code:json}\n' + e.responseBody.content + '\n{code}\n';
-            }
-
-            copyText(jira, 'Jira Markdown copied to clipboard!');
-        }
-
-        function copySlackMarkdown() {
-            if (!selectedEvent) return;
-            const e = selectedEvent;
-            const duration = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? (e.timing.endTimestamp - e.timing.startTimestamp) : '-');
-            
-            let md = `*🐛 Bug Report: ${e.method} ${e.path || e.url}*\n`;
-            md += `• *Status:* ${e.statusCode || 'FAILED'} ${e.statusMessage || ''} (${duration} ms)\n`;
-            md += `• *Timestamp:* ${new Date(e.timestamp).toLocaleTimeString()}\n\n`;
-            md += `*cURL:*\n\`\`\`bash\ncurl -X ${e.method || 'GET'} '${e.url}'\n\`\`\`\n`;
-            if (e.responseBody && e.responseBody.content) {
-                md += `*Response Body:*\n\`\`\`json\n${e.responseBody.content}\n\`\`\`\n`;
-            }
-            copyText(md, 'Slack / GitHub Markdown copied!');
         }
 
         function downloadSingleHar() {
@@ -1307,7 +1322,31 @@
         }
 
         function copyText(text, successMsg) {
-            navigator.clipboard.writeText(text).then(() => showToast(successMsg || 'Copied to clipboard!'));
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    if (successMsg) showToast(successMsg);
+                }).catch(() => fallbackCopyText(text, successMsg));
+            } else {
+                fallbackCopyText(text, successMsg);
+            }
+        }
+
+        function fallbackCopyText(text, successMsg) {
+            try {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                if (successMsg) showToast(successMsg);
+            } catch(e) {
+                console.error('Fallback copy failed', e);
+            }
         }
 
         function formatBytes(bytes) {

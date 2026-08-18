@@ -127,13 +127,13 @@ class DemoApiService {
             .addFormDataPart("description", "Tracea multipart upload test")
             .addFormDataPart(
                 "avatar",
-                "profile_picture.png",
-                "FAKE_PNG_BINARY_HEADER_DATA_1234567890".toByteArray().toRequestBody("image/png".toMediaType())
+                "avatar.png",
+                "FAKE_PNG_BINARY_HEADER_DATA_TRACEA_TEST".toByteArray().toRequestBody("image/png".toMediaType())
             )
             .build()
 
         val request = Request.Builder()
-            .url("https://httpbin.org/post")
+            .url("https://postman-echo.com/post")
             .post(multipartBody)
             .build()
         return executeRequest(request)
@@ -141,7 +141,7 @@ class DemoApiService {
 
     suspend fun downloadImage(): Result<String> {
         val request = Request.Builder()
-            .url("https://httpbin.org/image/png")
+            .url("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png")
             .build()
         return executeRequest(request)
     }

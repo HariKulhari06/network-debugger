@@ -358,11 +358,15 @@
 
                 <!-- Right: Formatted Markdown & Timeline Preview -->
                 <div class="modal-right-pane">
-                    <div class="jira-config-box">
-                        <span style="font-weight: 600; color: var(--text-muted);">🏢 Jira Domain:</span>
-                        <input type="text" id="jira-domain-input" class="jira-config-input" placeholder="e.g. company.atlassian.net" onchange="saveJiraConfig()">
-                        <span style="font-weight: 600; color: var(--text-muted);">Project:</span>
-                        <input type="text" id="jira-project-input" class="jira-config-input" style="max-width: 90px;" placeholder="MOB" onchange="saveJiraConfig()">
+                    <div class="jira-config-box" style="flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 240px;">
+                            <span style="font-weight: 600; color: var(--text-muted);">🏢 Domain:</span>
+                            <input type="text" id="jira-domain-input" class="jira-config-input" placeholder="e.g. company.atlassian.net" onchange="saveJiraConfig()">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-weight: 600; color: var(--text-muted);" title="Numeric Project ID like 10000 or Key like MOB">Project ID / Key:</span>
+                            <input type="text" id="jira-project-input" class="jira-config-input" style="max-width: 100px;" placeholder="10000 / MOB" onchange="saveJiraConfig()">
+                        </div>
                     </div>
 
                     <div class="format-switch-row">
@@ -379,10 +383,11 @@
             </div>
             <div class="modal-footer">
                 <div style="color: var(--text-muted); font-size: 11.5px; display: flex; align-items: center; gap: 8px;">
-                    <span>💡 <b>Tip:</b> Clicking "Open Jira & Prepare Bug" downloads screenshot + HAR and copies screenshot to clipboard (press <code>Cmd+V</code> in Jira to paste).</span>
+                    <span>💡 <b>Tip:</b> If Jira asks to select project first, press <b>Cmd+V / Ctrl+V</b> to paste description directly.</span>
                 </div>
-                <div style="display: flex; gap: 8px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button class="action-chip-btn" onclick="copyModalMarkdown()">📋 Copy Description</button>
+                    <button class="action-chip-btn" onclick="copyScreenshotToClipboard()">🖼️ Copy Screenshot</button>
                     <button class="action-chip-btn" onclick="downloadModalSessionHar()">📦 Download HAR</button>
                     <button class="action-chip-btn jira-hero" onclick="openJiraPrefilledTab()">🚀 Open Jira & Prepare Bug</button>
                 </div>
@@ -1076,32 +1081,31 @@
             // Description
             const description = generateSessionJiraReport(currentModalSession, sessionEvents);
 
-            // 1. Copy screenshot image directly to OS clipboard
-            copyScreenshotToClipboard(false);
+            // 1. Copy description text to clipboard so QA can paste directly if Jira's 2-step wizard drops it
+            navigator.clipboard.writeText(description).catch(e => console.warn(e));
 
             // 2. Auto-download annotated screenshot image
             downloadAnnotatedScreenshot();
 
-            // 3. Auto-download session HAR file
-            downloadModalSessionHar();
+            // 3. Stagger HAR download by 300ms so browser doesn't block as multi-download spam
+            setTimeout(function() {
+                downloadModalSessionHar();
+            }, 300);
 
             // 4. Build universal Jira URL
-            // Using CreateIssue!default.jspa avoids "You have not selected a valid project" error
+            // If numeric PID (e.g. 10000), Jira skips the project picker and pre-fills directly!
             let jiraUrl;
             if (/^\d+$/.test(project)) {
-                // Numeric Project ID (e.g. 10000)
                 jiraUrl = `https://${jiraDomain}/secure/CreateIssueDetails!init.jspa?pid=${encodeURIComponent(project)}&issuetype=1&summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
             } else if (project) {
-                // Alphanumeric Project Key (e.g. MOB)
                 jiraUrl = `https://${jiraDomain}/secure/CreateIssue!default.jspa?project=${encodeURIComponent(project)}&summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
             } else {
-                // No Project specified - opens Jira Create dialog with user's default/last-used project
                 jiraUrl = `https://${jiraDomain}/secure/CreateIssue!default.jspa?summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}`;
             }
 
             window.open(jiraUrl, '_blank');
 
-            showToast('🚀 Jira opened! Screenshot copied to clipboard (press Cmd+V/Ctrl+V in Jira to attach) and files downloaded.');
+            showToast('🚀 Jira opened! Description copied to clipboard (press Cmd+V/Ctrl+V in Jira to paste), screenshot and HAR downloaded.');
         }
 
         function copyScreenshotToClipboard(showFeedback = true) {

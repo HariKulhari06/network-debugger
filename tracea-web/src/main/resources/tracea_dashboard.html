@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracea Web Inspector</title>
+    <style>
+        :root {
+            --bg-base: #0F111A;
+            --bg-surface: #171926;
+            --bg-card: #1E202E;
+            --bg-card-hover: #25283B;
+            --bg-card-active: #2D314A;
+            --border-color: #30344D;
+            --text-main: #E2E4F3;
+            --text-muted: #9499B8;
+            --primary: #7E97FF;
+            --primary-hover: #6784FF;
+            --accent-green: #4FD6BE;
+            --accent-red: #F07178;
+            --accent-orange: #FFCB6B;
+            --accent-purple: #C792EA;
+            --accent-blue: #82AAFF;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background: var(--bg-base); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Top Navigation Bar */
+        header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+            flex-shrink: 0;
+        }
+        .logo-area { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+        .logo-badge { background: var(--primary); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+        .status-pill { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--accent-green); background: rgba(79, 214, 190, 0.1); border: 1px solid rgba(79, 214, 190, 0.2); padding: 4px 10px; border-radius: 20px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .nav-btn { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+        .nav-btn:hover { background: var(--bg-card-hover); border-color: var(--primary); }
+        .nav-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .danger-btn { color: var(--accent-red); border-color: rgba(240, 113, 120, 0.3); }
+        .danger-btn:hover { background: rgba(240, 113, 120, 0.15); border-color: var(--accent-red); }
+
+        /* Main Workspace Split Layout */
+        main { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Left Pane: Transaction Table */
+        .left-pane { width: 45%; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; background: var(--bg-surface); }
+        .search-toolbar { padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .search-box { width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-size: 13px; outline: none; }
+        .search-box:focus { border-color: var(--primary); }
+        .filter-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+        .chip { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 14px; font-size: 11px; font-weight: 600; cursor: pointer; user-select: none; }
+        .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .chip.error.active { background: var(--accent-red); border-color: var(--accent-red); }
+
+        .request-list { flex: 1; overflow-y: auto; }
+        .request-item { padding: 10px 16px; border-bottom: 1px solid rgba(48, 52, 77, 0.5); cursor: pointer; transition: background 0.1s; display: flex; flex-direction: column; gap: 4px; }
+        .request-item:hover { background: var(--bg-card-hover); }
+        .request-item.selected { background: var(--bg-card-active); border-left: 3px solid var(--primary); }
+        .req-line-1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .req-method-path { display: flex; align-items: center; gap: 8px; overflow: hidden; }
+        .req-path { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); font-family: monospace; }
+        .req-line-2 { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+
+        /* Badges */
+        .badge { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        .badge-get { color: var(--accent-green); }
+        .badge-post { color: var(--primary); }
+        .badge-put { color: var(--accent-orange); }
+        .badge-delete { color: var(--accent-red); }
+        .badge-patch { color: var(--accent-purple); }
+        
+        .status-badge { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; color: #fff; }
+        .status-2xx { background: var(--accent-green); color: #0F111A; }
+        .status-3xx { background: var(--accent-blue); }
+        .status-4xx { background: var(--accent-red); }
+        .status-5xx { background: var(--accent-red); }
+        .status-mock { background: #9C27B0; color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-right: 4px; font-weight: 700; }
+
+        /* Right Pane: Inspector */
+        .right-pane { width: 55%; display: flex; flex-direction: column; background: var(--bg-base); overflow: hidden; }
+        .empty-inspector { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); gap: 10px; font-size: 14px; }
+        
+        .detail-header { padding: 14px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; }
+        .detail-title-row { display: flex; align-items: center; justify-content: space-between; }
+        .detail-url { font-size: 12px; color: var(--text-muted); word-break: break-all; font-family: monospace; background: var(--bg-card); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color); }
+        
+        /* Fast Action Bar */
+        .action-bar { display: flex; gap: 8px; padding: 10px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); }
+        .action-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s; }
+        .action-btn:hover { background: var(--bg-card-hover); border-color: var(--primary); color: var(--primary); }
+        .action-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .action-btn.primary:hover { background: var(--primary-hover); }
+
+        /* Detail Tabs */
+        .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); background: var(--bg-surface); padding: 0 20px; gap: 4px; }
+        .tab-item { padding: 10px 16px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab-item.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-content { flex: 1; overflow-y: auto; padding: 20px; }
+
+        /* Tables & Code Containers */
+        .kv-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+        .kv-table th { text-align: left; padding: 8px 12px; background: var(--bg-card); color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); }
+        .kv-table td { padding: 8px 12px; border-bottom: 1px solid rgba(48, 52, 77, 0.4); word-break: break-all; }
+        .kv-table td:first-child { font-weight: 600; color: var(--accent-purple); width: 35%; font-family: monospace; }
+        .kv-table td:last-child { font-family: monospace; color: var(--text-main); }
+        
+        .code-block { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; overflow-x: auto; color: var(--text-main); line-height: 1.5; max-height: 450px; }
+        .section-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px 0; }
+        .section-title:first-child { margin-top: 0; }
+
+        /* Toast Feedback */
+        #toast { position: fixed; bottom: 20px; right: 20px; background: #2E7D32; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; z-index: 1000; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-area">
+            <span>📡 Tracea</span>
+            <span class="logo-badge">WEB INSPECTOR</span>
+            <div class="status-pill">
+                <div class="status-dot"></div>
+                <span id="device-status">Live Connected</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <span style="font-size: 12px; color: var(--text-muted); font-family: monospace;" id="req-counter">0 requests</span>
+            <button class="nav-btn" onclick="exportFullHar()">📦 Download Full HAR</button>
+            <button class="nav-btn danger-btn" onclick="clearAllRequests()">🗑️ Clear Traffic</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Left Pane: Transaction Stream -->
+        <section class="left-pane">
+            <div class="search-toolbar">
+                <input type="text" id="search-input" class="search-box" placeholder="Filter by endpoint path, host, method..." oninput="filterRequests()">
+                <div class="filter-chips">
+                    <div class="chip active" onclick="setFilter('ALL', this)">ALL</div>
+                    <div class="chip" onclick="setFilter('2xx', this)">2xx</div>
+                    <div class="chip" onclick="setFilter('3xx', this)">3xx</div>
+                    <div class="chip" onclick="setFilter('4xx', this)">4xx</div>
+                    <div class="chip" onclick="setFilter('5xx', this)">5xx</div>
+                    <div class="chip error" onclick="setFilter('ERRORS', this)">Errors</div>
+                </div>
+            </div>
+            <div class="request-list" id="request-list-container">
+                <!-- Dynamically populated rows -->
+            </div>
+        </section>
+
+        <!-- Right Pane: Deep Inspector -->
+        <section class="right-pane" id="inspector-pane">
+            <div class="empty-inspector" id="empty-inspector-view">
+                <div style="font-size: 36px;">🔍</div>
+                <div>Select a network transaction to inspect details</div>
+            </div>
+
+            <div id="active-inspector-view" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
+                <div class="detail-header">
+                    <div class="detail-title-row">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="detail-method-badge" class="badge"></span>
+                            <span id="detail-path" style="font-size: 16px; font-weight: 700; font-family: monospace;"></span>
+                            <span id="detail-mock-badge" class="status-mock" style="display: none;">🎭 MOCK</span>
+                        </div>
+                        <span id="detail-status-badge" class="status-badge"></span>
+                    </div>
+                    <div class="detail-url" id="detail-full-url"></div>
+                </div>
+
+                <div class="action-bar">
+                    <button class="action-btn primary" onclick="copyJiraMarkdown()">🐛 Copy Jira Markdown</button>
+                    <button class="action-btn" onclick="copyCurlCommand()">📋 Copy as cURL</button>
+                    <button class="action-btn" onclick="downloadSingleHar()">📦 Download HAR</button>
+                </div>
+
+                <div class="tab-bar">
+                    <div class="tab-item active" onclick="switchTab('overview', this)">Overview</div>
+                    <div class="tab-item" onclick="switchTab('request', this)">Request</div>
+                    <div class="tab-item" onclick="switchTab('response', this)">Response</div>
+                    <div class="tab-item" onclick="switchTab('timing', this)">Timing</div>
+                </div>
+
+                <div class="tab-content" id="tab-content-area">
+                    <!-- Tab contents inserted here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast"></div>
+
+    <script>
+        let allEvents = [];
+        let selectedEvent = null;
+        let activeFilter = 'ALL';
+        let currentTab = 'overview';
+        let ws = null;
+
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = protocol + '//' + window.location.host + '/ws/traffic';
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                document.getElementById('device-status').textContent = 'Live Connected';
+                fetchInitialEvents();
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (Array.isArray(data)) {
+                        allEvents = data;
+                        renderList();
+                    } else if (data && data.id) {
+                        const idx = allEvents.findIndex(function(e) { return e.id === data.id; });
+                        if (idx >= 0) allEvents[idx] = data;
+                        else allEvents.unshift(data);
+                        renderList();
+                    }
+                } catch(e) { console.error(e); }
+            };
+
+            ws.onclose = function() {
+                document.getElementById('device-status').textContent = 'Reconnecting...';
+                setTimeout(initWebSocket, 2000);
+            };
+        }
+
+        function fetchInitialEvents() {
+            fetch('/api/events')
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    allEvents = data || [];
+                    renderList();
+                })
+                .catch(function(e) { console.error(e); });
+        }
+
+        function setFilter(filter, el) {
+            activeFilter = filter;
+            document.querySelectorAll('.filter-chips .chip').forEach(function(c) { c.classList.remove('active'); });
+            el.classList.add('active');
+            renderList();
+        }
+
+        function filterRequests() { renderList(); }
+
+        function renderList() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const container = document.getElementById('request-list-container');
+            document.getElementById('req-counter').textContent = allEvents.length + ' requests';
+
+            const filtered = allEvents.filter(function(e) {
+                const matchesQuery = !query || e.url.toLowerCase().indexOf(query) >= 0 || (e.method && e.method.toLowerCase().indexOf(query) >= 0);
+                const code = e.statusCode || 0;
+                let matchesFilter = true;
+                if (activeFilter === '2xx') matchesFilter = code >= 200 && code < 300;
+                else if (activeFilter === '3xx') matchesFilter = code >= 300 && code < 400;
+                else if (activeFilter === '4xx') matchesFilter = code >= 400 && code < 500;
+                else if (activeFilter === '5xx') matchesFilter = code >= 500 && code < 600;
+                else if (activeFilter === 'ERRORS') matchesFilter = code >= 400 || !!e.error;
+                return matchesQuery && matchesFilter;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px;">No transactions match criteria</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(function(e) {
+                const isSelected = selectedEvent && selectedEvent.id === e.id;
+                const methodClass = 'badge-' + (e.method ? e.method.toLowerCase() : 'get');
+                const isMock = e.responseHeaders && (e.responseHeaders['X-Mocked-By'] || e.responseHeaders['x-mocked-by']);
+                
+                let statusClass = 'status-2xx';
+                const code = e.statusCode || 0;
+                if (code >= 500 || e.error) statusClass = 'status-5xx';
+                else if (code >= 400) statusClass = 'status-4xx';
+                else if (code >= 300) statusClass = 'status-3xx';
+
+                const duration = (e.timing && e.timing.endTimestamp && e.timing.startTimestamp) ? (e.timing.endTimestamp - e.timing.startTimestamp) + ' ms' : (e.duration ? e.duration + ' ms' : '-');
+                const size = formatBytes(e.responseSize || 0);
+
+                return '<div class="request-item ' + (isSelected ? 'selected' : '') + '" onclick="selectRequest(\'' + e.id + '\')">' +
+                    '<div class="req-line-1">' +
+                        '<div class="req-method-path">' +
+                            (isMock ? '<span class="status-mock">MOCK</span>' : '') +
+                            '<span class="badge ' + methodClass + '">' + (e.method || 'GET') + '</span>' +
+                            '<span class="req-path">' + escapeHtml(e.path || e.url) + '</span>' +
+                        '</div>' +
+                        '<span class="status-badge ' + statusClass + '">' + (code > 0 ? code : (e.error ? 'ERR' : '...')) + '</span>' +
+                    '</div>' +
+                    '<div class="req-line-2">' +
+                        '<span>' + escapeHtml(e.host || '') + '</span>' +
+                        '<span>' + duration + ' &bull; ' + size + '</span>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        function selectRequest(id) {
+            selectedEvent = allEvents.find(function(e) { return e.id === id; });
+            if (!selectedEvent) return;
+
+            document.getElementById('empty-inspector-view').style.display = 'none';
+            const activeView = document.getElementById('active-inspector-view');
+            activeView.style.display = 'flex';
+
+            document.getElementById('detail-method-badge').textContent = selectedEvent.method || 'GET';
+            document.getElementById('detail-method-badge').className = 'badge badge-' + (selectedEvent.method ? selectedEvent.method.toLowerCase() : 'get');
+            document.getElementById('detail-path').textContent = selectedEvent.path || selectedEvent.url;
+            document.getElementById('detail-full-url').textContent = selectedEvent.url;
+
+            const isMock = selectedEvent.responseHeaders && (selectedEvent.responseHeaders['X-Mocked-By'] || selectedEvent.responseHeaders['x-mocked-by']);
+            document.getElementById('detail-mock-badge').style.display = isMock ? 'inline-block' : 'none';
+
+            const code = selectedEvent.statusCode || 0;
+            const statusEl = document.getElementById('detail-status-badge');
+            statusEl.textContent = code > 0 ? (code + ' ' + (selectedEvent.statusMessage || 'OK')) : (selectedEvent.error ? 'FAILED' : 'In Progress');
+            let statusClass = 'status-2xx';
+            if (code >= 500 || selectedEvent.error) statusClass = 'status-5xx';
+            else if (code >= 400) statusClass = 'status-4xx';
+            else if (code >= 300) statusClass = 'status-3xx';
+            statusEl.className = 'status-badge ' + statusClass;
+
+            renderTab();
+            renderList();
+        }
+
+        function switchTab(tab, el) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-bar .tab-item').forEach(function(t) { t.classList.remove('active'); });
+            el.classList.add('active');
+            renderTab();
+        }
+
+        function renderTab() {
+            if (!selectedEvent) return;
+            const area = document.getElementById('tab-content-area');
+            const e = selectedEvent;
+
+            if (currentTab === 'overview') {
+                const duration = (e.timing && e.timing.endTimestamp && e.timing.startTimestamp) ? (e.timing.endTimestamp - e.timing.startTimestamp) + ' ms' : '-';
+                area.innerHTML = '<div class="section-title">General Information</div>' +
+                    '<table class="kv-table">' +
+                        '<tr><td>Request URL</td><td>' + escapeHtml(e.url) + '</td></tr>' +
+                        '<tr><td>Request Method</td><td>' + (e.method || 'GET') + '</td></tr>' +
+                        '<tr><td>Status Code</td><td>' + (e.statusCode || '-') + ' ' + escapeHtml(e.statusMessage || '') + '</td></tr>' +
+                        '<tr><td>Duration</td><td>' + duration + '</td></tr>' +
+                        '<tr><td>Request Size</td><td>' + formatBytes(e.requestSize || 0) + '</td></tr>' +
+                        '<tr><td>Response Size</td><td>' + formatBytes(e.responseSize || 0) + '</td></tr>' +
+                        '<tr><td>Session</td><td>' + escapeHtml(e.sessionName || e.sessionId || 'Default') + '</td></tr>' +
+                    '</table>' +
+                    '<div class="section-title">Response Body Preview</div>' +
+                    '<div class="code-block">' + formatBody(e.responseBody) + '</div>';
+            } else if (currentTab === 'request') {
+                let headersRows = '';
+                if (e.requestHeaders) {
+                    for (const k in e.requestHeaders) {
+                        const v = e.requestHeaders[k];
+                        headersRows += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(Array.isArray(v) ? v.join(', ') : v) + '</td></tr>';
+                    }
+                }
+                area.innerHTML = '<div class="section-title">Request Headers</div>' +
+                    '<table class="kv-table">' + (headersRows || '<tr><td colspan="2">No Headers</td></tr>') + '</table>' +
+                    '<div class="section-title">Request Body</div>' +
+                    '<div class="code-block">' + formatBody(e.requestBody) + '</div>';
+            } else if (currentTab === 'response') {
+                let headersRows = '';
+                if (e.responseHeaders) {
+                    for (const k in e.responseHeaders) {
+                        const v = e.responseHeaders[k];
+                        headersRows += '<tr><td>' + escapeHtml(k) + '</td><td>' + escapeHtml(Array.isArray(v) ? v.join(', ') : v) + '</td></tr>';
+                    }
+                }
+                area.innerHTML = '<div class="section-title">Response Headers</div>' +
+                    '<table class="kv-table">' + (headersRows || '<tr><td colspan="2">No Headers</td></tr>') + '</table>' +
+                    '<div class="section-title">Response Body</div>' +
+                    '<div class="code-block">' + formatBody(e.responseBody) + '</div>';
+            } else if (currentTab === 'timing') {
+                const t = e.timing || {};
+                area.innerHTML = '<div class="section-title">Timing Waterfall Breakdown</div>' +
+                    '<table class="kv-table">' +
+                        '<tr><td>DNS Lookup</td><td>' + (t.dnsMs ? t.dnsMs + ' ms' : '-') + '</td></tr>' +
+                        '<tr><td>TCP Connect</td><td>' + (t.connectMs ? t.connectMs + ' ms' : '-') + '</td></tr>' +
+                        '<tr><td>TLS Handshake</td><td>' + (t.tlsMs ? t.tlsMs + ' ms' : '-') + '</td></tr>' +
+                        '<tr><td>Waiting (TTFB)</td><td>' + (t.waitingMs ? t.waitingMs + ' ms' : '-') + '</td></tr>' +
+                        '<tr><td>Download</td><td>' + (t.downloadMs ? t.downloadMs + ' ms' : '-') + '</td></tr>' +
+                    '</table>';
+            }
+        }
+
+        function copyCurlCommand() {
+            if (!selectedEvent) return;
+            const e = selectedEvent;
+            let curl = 'curl -X ' + (e.method || 'GET') + ' \'' + e.url + '\'';
+            if (e.requestHeaders) {
+                for (const k in e.requestHeaders) {
+                    const v = e.requestHeaders[k];
+                    curl += ' \\\n  -H \'' + k + ': ' + (Array.isArray(v) ? v.join(', ') : v) + '\'';
+                }
+            }
+            if (e.requestBody && e.requestBody.content) {
+                curl += ' \\\n  -d \'' + e.requestBody.content.replace(/'/g, "\\'") + '\'';
+            }
+            navigator.clipboard.writeText(curl).then(function() { showToast('cURL command copied to clipboard!'); });
+        }
+
+        function copyJiraMarkdown() {
+            if (!selectedEvent) return;
+            const e = selectedEvent;
+            const duration = (e.timing && e.timing.endTimestamp && e.timing.startTimestamp) ? (e.timing.endTimestamp - e.timing.startTimestamp) + ' ms' : '-';
+            const isError = (e.statusCode && e.statusCode >= 400) || !!e.error;
+
+            let jira = 'h3. 🐛 Bug Report: ' + e.method + ' ' + (e.path || e.url) + '\n\n';
+            jira += 'h4. 📱 Environment Details\n';
+            jira += '|| Property || Value ||\n';
+            jira += '| *Session* | ' + (e.sessionName || 'Default Session') + ' |\n';
+            jira += '| *Timestamp* | ' + new Date(e.timestamp).toLocaleString() + ' |\n\n';
+
+            jira += 'h4. 📡 Network Call Details\n';
+            jira += '* *Endpoint:* ' + (isError ? '{color:red}*' : '*') + e.method + ' ' + (e.path || e.url) + (isError ? '*{color}' : '*') + '\n';
+            jira += '* *Status:* ' + (isError ? '{color:red}*' : '*') + (e.statusCode || 'FAILED') + ' ' + (e.statusMessage || '') + (isError ? '*{color}' : '*') + ' (' + duration + ')\n\n';
+
+            jira += '*cURL Command:*\n{code:bash}\n';
+            jira += 'curl -X ' + (e.method || 'GET') + ' \'' + e.url + '\'';
+            if (e.requestHeaders) {
+                for (const k in e.requestHeaders) {
+                    const v = e.requestHeaders[k];
+                    jira += ' \\\n  -H \'' + k + ': ' + (Array.isArray(v) ? v.join(', ') : v) + '\'';
+                }
+            }
+            if (e.requestBody && e.requestBody.content) {
+                jira += ' \\\n  -d \'' + e.requestBody.content + '\'';
+            }
+            jira += '\n{code}\n\n';
+
+            if (e.responseBody && e.responseBody.content) {
+                jira += '*Response Payload:*\n{code:json}\n' + e.responseBody.content + '\n{code}\n';
+            }
+
+            navigator.clipboard.writeText(jira).then(function() { showToast('Jira Markdown copied to clipboard!'); });
+        }
+
+        function downloadSingleHar() {
+            if (!selectedEvent) return;
+            window.open('/api/export/har?id=' + selectedEvent.id, '_blank');
+        }
+
+        function exportFullHar() {
+            window.open('/api/export/har', '_blank');
+        }
+
+        function clearAllRequests() {
+            if (!confirm('Clear all captured network traffic?')) return;
+            fetch('/api/events', { method: 'DELETE' })
+                .then(function() {
+                    allEvents = [];
+                    selectedEvent = null;
+                    document.getElementById('empty-inspector-view').style.display = 'flex';
+                    document.getElementById('active-inspector-view').style.display = 'none';
+                    renderList();
+                    showToast('Traffic cleared');
+                })
+                .catch(function(e) { console.error(e); });
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function formatBody(bodyObj) {
+            if (!bodyObj || !bodyObj.content) return '<span style="color: var(--text-muted);">(No body payload)</span>';
+            try {
+                const parsed = JSON.parse(bodyObj.content);
+                return escapeHtml(JSON.stringify(parsed, null, 2));
+            } catch(e) {
+                return escapeHtml(bodyObj.content);
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(function() { toast.style.display = 'none'; }, 3000);
+        }
+
+        window.onload = initWebSocket;
+    </script>
+</body>
+</html>

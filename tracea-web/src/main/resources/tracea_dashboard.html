@@ -133,6 +133,8 @@
         .action-chip-btn:hover { background: var(--bg-card-hover); border-color: var(--primary); color: var(--primary); }
         .action-chip-btn.highlight { background: var(--primary); color: #fff; border-color: var(--primary); }
         .action-chip-btn.highlight:hover { background: var(--primary-hover); }
+        .action-chip-btn.jira-hero { background: linear-gradient(135deg, #0052CC, #2684FF); color: #fff; border-color: #2684FF; font-weight: 700; }
+        .action-chip-btn.jira-hero:hover { background: linear-gradient(135deg, #0747A6, #0052CC); }
 
         /* Tab Navigation */
         .tab-strip { display: flex; border-bottom: 1px solid var(--border-color); background: var(--bg-surface); padding: 0 20px; gap: 6px; }
@@ -206,13 +208,17 @@
         #screenshot-canvas { max-width: 100%; max-height: 100%; object-fit: contain; cursor: crosshair; }
 
         .modal-right-pane { width: 55%; display: flex; flex-direction: column; padding: 16px; gap: 12px; background: var(--bg-surface); overflow-y: auto; }
-        .format-switch-row { display: flex; align-items: center; justify-content: space-between; }
-        .modal-preview-block { background: #0A0C13; border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; font-family: ui-monospace, monospace; font-size: 11.5px; line-height: 1.5; color: var(--text-main); white-space: pre-wrap; word-break: break-all; flex: 1; overflow-y: auto; max-height: 500px; }
+        .jira-config-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; font-size: 11.5px; }
+        .jira-config-input { background: var(--bg-base); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 5px; padding: 4px 8px; font-size: 11.5px; flex: 1; outline: none; }
+        .jira-config-input:focus { border-color: var(--primary); }
 
-        .modal-footer { padding: 12px 20px; background: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
+        .format-switch-row { display: flex; align-items: center; justify-content: space-between; }
+        .modal-preview-block { background: #0A0C13; border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; font-family: ui-monospace, monospace; font-size: 11.5px; line-height: 1.5; color: var(--text-main); white-space: pre-wrap; word-break: break-all; flex: 1; overflow-y: auto; max-height: 440px; }
+
+        .modal-footer { padding: 12px 20px; background: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
 
         /* Toast Feedback */
-        #toast { position: fixed; bottom: 20px; right: 20px; background: #2E7D32; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,0.5); display: none; z-index: 2000; animation: fadeIn 0.2s; }
+        #toast { position: fixed; bottom: 20px; right: 20px; background: #2E7D32; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.6); display: none; z-index: 2000; animation: fadeIn 0.2s; max-width: 450px; line-height: 1.4; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -341,7 +347,8 @@
                         <div style="display: flex; gap: 6px;">
                             <button class="session-btn" onclick="refreshModalScreenshot()">🔄 Refresh</button>
                             <button class="session-btn" onclick="clearCanvasMarkup()">🧹 Clear</button>
-                            <button class="session-btn" onclick="downloadAnnotatedScreenshot()">💾 Save Image</button>
+                            <button class="session-btn" onclick="copyScreenshotToClipboard()">📋 Copy Image</button>
+                            <button class="session-btn" onclick="downloadAnnotatedScreenshot()">💾 Save</button>
                         </div>
                     </div>
                     <div class="canvas-container" id="canvas-container-box">
@@ -351,10 +358,17 @@
 
                 <!-- Right: Formatted Markdown & Timeline Preview -->
                 <div class="modal-right-pane">
+                    <div class="jira-config-box">
+                        <span style="font-weight: 600; color: var(--text-muted);">🏢 Jira Domain:</span>
+                        <input type="text" id="jira-domain-input" class="jira-config-input" placeholder="e.g. company.atlassian.net" onchange="saveJiraConfig()">
+                        <span style="font-weight: 600; color: var(--text-muted);">Project:</span>
+                        <input type="text" id="jira-project-input" class="jira-config-input" style="max-width: 90px;" placeholder="MOB" onchange="saveJiraConfig()">
+                    </div>
+
                     <div class="format-switch-row">
-                        <span style="font-weight: 700; color: var(--text-main); font-size: 12px;">📋 Bug Description & Timeline</span>
+                        <span style="font-weight: 700; color: var(--text-main); font-size: 12px;">📋 Clean Timeline & Description</span>
                         <div style="display: flex; gap: 6px;">
-                            <button class="session-btn" id="format-jira-btn" onclick="setModalFormat('jira')">Jira Format</button>
+                            <button class="session-btn active" id="format-jira-btn" onclick="setModalFormat('jira')">Jira Format</button>
                             <button class="session-btn" id="format-md-btn" onclick="setModalFormat('markdown')">Markdown / Slack</button>
                         </div>
                     </div>
@@ -364,12 +378,13 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <div style="color: var(--text-muted); font-size: 11.5px;">
-                    📎 Includes complete session timeline, failing cURLs, and live mobile screenshot.
+                <div style="color: var(--text-muted); font-size: 11.5px; display: flex; align-items: center; gap: 8px;">
+                    <span>💡 <b>Tip:</b> Clicking "Open Jira & Prepare Bug" downloads screenshot + HAR and copies screenshot to clipboard (press <code>Cmd+V</code> in Jira to paste).</span>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <button class="action-chip-btn" onclick="downloadModalSessionHar()">📦 Download Session HAR</button>
-                    <button class="action-chip-btn highlight" onclick="copyModalMarkdown()">📋 Copy Bug Description</button>
+                    <button class="action-chip-btn" onclick="copyModalMarkdown()">📋 Copy Description</button>
+                    <button class="action-chip-btn" onclick="downloadModalSessionHar()">📦 Download HAR</button>
+                    <button class="action-chip-btn jira-hero" onclick="openJiraPrefilledTab()">🚀 Open Jira & Prepare Bug</button>
                 </div>
             </div>
         </div>
@@ -907,11 +922,16 @@
             card.querySelectorAll('.json-caret').forEach(el => el.classList.add('collapsed'));
         }
 
-        /* Session Jira Bug Report Modal & Canvas Drawing Logic */
+        /* Session Jira Bug Report Modal & Automated Attachment Logic */
         function openJiraBugModal(sName) {
             currentModalSession = sName;
             document.getElementById('modal-session-tag').textContent = sName;
             document.getElementById('jira-bug-modal').style.display = 'flex';
+            
+            // Load saved Jira configuration
+            document.getElementById('jira-domain-input').value = localStorage.getItem('tracea_jira_domain') || '';
+            document.getElementById('jira-project-input').value = localStorage.getItem('tracea_jira_project') || '';
+
             setModalFormat('jira');
             refreshModalScreenshot();
             setupCanvasDrawing();
@@ -919,6 +939,13 @@
 
         function closeJiraBugModal() {
             document.getElementById('jira-bug-modal').style.display = 'none';
+        }
+
+        function saveJiraConfig() {
+            const domain = document.getElementById('jira-domain-input').value.trim();
+            const project = document.getElementById('jira-project-input').value.trim();
+            if (domain) localStorage.setItem('tracea_jira_domain', domain);
+            if (project) localStorage.setItem('tracea_jira_project', project);
         }
 
         function setModalFormat(format) {
@@ -931,6 +958,7 @@
             document.getElementById('modal-markdown-preview').textContent = reportText;
         }
 
+        /* Clean Lean Jira & Markdown Reports */
         function generateSessionJiraReport(sName, events) {
             const total = events.length;
             const errors = events.filter(e => (e.statusCode && e.statusCode >= 400) || !!e.error);
@@ -938,15 +966,16 @@
             const lastEvent = events[events.length - 1] || {};
             const durationMs = (lastEvent.timestamp && firstEvent.timestamp) ? (lastEvent.timestamp - firstEvent.timestamp) : 0;
             const durationText = durationMs > 0 ? (durationMs / 1000).toFixed(1) + 's' : '-';
+            const firstError = errors[0];
 
-            let r = `h3. 🐛 Bug Report: Session Failure in [${sName}]\n\n`;
-            r += `h4. 📱 Session & Environment Diagnostics\n`;
+            let r = `h3. 🐛 Bug Report: Session Issue [${sName}]\n\n`;
+            r += `h4. 📱 Session Diagnostics\n`;
             r += `|| Property || Details ||\n`;
-            r += `| *Session Name* | ${sName} |\n`;
-            r += `| *Session Duration* | ${durationText} (${total} total transactions) |\n`;
-            r += `| *Error Summary* | ${errors.length > 0 ? '{color:red}*' + errors.length + ' Failed Requests*{color}' : '{color:green}*No Network Errors*{color}'} |\n\n`;
+            r += `| *Session* | ${sName} |\n`;
+            r += `| *Duration* | ${durationText} (${total} total transactions) |\n`;
+            r += `| *Errors* | ${errors.length > 0 ? '{color:red}*' + errors.length + ' Failed Request(s)*{color}' : '{color:green}*No Network Errors*{color}'} |\n\n`;
 
-            r += `h4. ⏱️ Session Network Timeline (Chronological)\n`;
+            r += `h4. ⏱️ Chronological Session Timeline\n`;
             events.forEach((e, idx) => {
                 const isErr = (e.statusCode && e.statusCode >= 400) || !!e.error;
                 const statusStr = e.statusCode ? `${e.statusCode} ${e.statusMessage || ''}` : (e.error ? 'FAILED' : 'OK');
@@ -956,31 +985,30 @@
                 r += `# (/) {{${e.method || 'GET'} ${e.path || e.url}}} -> ${isErr ? '{color:red}*' : '{color:green}*'}${statusStr}${isErr ? '*{color}' : '*{color}'} (${durVal} ms)${rootTag}\n`;
             });
 
-            if (errors.length > 0) {
-                r += `\nh4. 💥 Failing Requests Deep-Dive\n`;
-                errors.forEach(err => {
-                    r += `* *Endpoint:* {color:red}*${err.method} ${err.path || err.url}*{color}\n`;
-                    r += `* *Status:* ${err.statusCode || 'FAILED'} ${err.statusMessage || ''}\n`;
-                    r += `*cURL Command:*\n{code:bash}\ncurl -X ${err.method || 'GET'} '${err.url}'`;
-                    if (err.requestHeaders) {
-                        for (const k in err.requestHeaders) {
-                            r += ` \\\n  -H '${k}: ${Array.isArray(err.requestHeaders[k]) ? err.requestHeaders[k].join(', ') : err.requestHeaders[k]}'`;
-                        }
+            if (firstError) {
+                r += `\nh4. 💥 Root Cause / Failing Request Details\n`;
+                r += `* *Endpoint:* {color:red}*${firstError.method} ${firstError.path || firstError.url}*{color}\n`;
+                r += `* *Status:* ${firstError.statusCode || 'FAILED'} ${firstError.statusMessage || ''}\n`;
+                r += `*cURL Command:*\n{code:bash}\ncurl -X ${firstError.method || 'GET'} '${firstError.url}'`;
+                if (firstError.requestHeaders) {
+                    for (const k in firstError.requestHeaders) {
+                        r += ` \\\n  -H '${k}: ${Array.isArray(firstError.requestHeaders[k]) ? firstError.requestHeaders[k].join(', ') : firstError.requestHeaders[k]}'`;
                     }
-                    if (err.requestBody && err.requestBody.content) {
-                        r += ` \\\n  -d '${err.requestBody.content}'`;
-                    }
-                    r += `\n{code}\n\n`;
+                }
+                if (firstError.requestBody && firstError.requestBody.content) {
+                    r += ` \\\n  -d '${firstError.requestBody.content}'`;
+                }
+                r += `\n{code}\n\n`;
 
-                    if (err.responseBody && err.responseBody.content) {
-                        r += `*Server Error Response:*\n{code:json}\n${err.responseBody.content}\n{code}\n\n`;
-                    }
-                });
+                if (firstError.responseBody && firstError.responseBody.content) {
+                    r += `*Server Error Response:*\n{code:json}\n${firstError.responseBody.content}\n{code}\n\n`;
+                }
             }
 
-            r += `h4. 📎 Attachments\n`;
-            r += `* *Screenshot:* {{attached_screenshot.png}}\n`;
-            r += `* *Session HAR:* {{tracea_session_${Date.now()}.har}}\n`;
+            const downloadUrl = window.location.origin + '/api/export/har?sessionId=' + encodeURIComponent(sName);
+            r += `h4. 📎 Attached Artifacts\n`;
+            r += `* *Live Screenshot:* {{attached_screenshot.png}}\n`;
+            r += `* *Complete Session HAR:* [Download ${sName}.har|${downloadUrl}]\n`;
 
             return r;
         }
@@ -992,14 +1020,15 @@
             const lastEvent = events[events.length - 1] || {};
             const durationMs = (lastEvent.timestamp && firstEvent.timestamp) ? (lastEvent.timestamp - firstEvent.timestamp) : 0;
             const durationText = durationMs > 0 ? (durationMs / 1000).toFixed(1) + 's' : '-';
+            const firstError = errors[0];
 
-            let r = `### 🐛 Bug Report: Session Failure in [${sName}]\n\n`;
+            let r = `### 🐛 Bug Report: Session Issue [${sName}]\n\n`;
             r += `#### 📱 Session Diagnostics\n`;
             r += `- **Session**: ${sName}\n`;
             r += `- **Duration**: ${durationText} (${total} requests)\n`;
             r += `- **Errors**: ${errors.length} failed\n\n`;
 
-            r += `#### ⏱️ Session Network Timeline\n`;
+            r += `#### ⏱️ Chronological Session Timeline\n`;
             events.forEach((e, idx) => {
                 const isErr = (e.statusCode && e.statusCode >= 400) || !!e.error;
                 const statusStr = e.statusCode ? `${e.statusCode} ${e.statusMessage || ''}` : (e.error ? 'FAILED' : 'OK');
@@ -1008,17 +1037,78 @@
                 r += `${idx + 1}. \`${e.method || 'GET'} ${e.path || e.url}\` -> **${statusStr}** (${durVal} ms)${rootTag}\n`;
             });
 
-            if (errors.length > 0) {
-                r += `\n#### 💥 Failing Requests\n`;
-                errors.forEach(err => {
-                    r += `**${err.method} ${err.path || err.url}** (${err.statusCode || 'FAILED'})\n\`\`\`bash\ncurl -X ${err.method || 'GET'} '${err.url}'\n\`\`\`\n`;
-                    if (err.responseBody && err.responseBody.content) {
-                        r += `*Response Body:*\n\`\`\`json\n${err.responseBody.content}\n\`\`\`\n\n`;
-                    }
-                });
+            if (firstError) {
+                r += `\n#### 💥 Root Cause / Failing Request\n`;
+                r += `**${firstError.method} ${firstError.path || firstError.url}** (${firstError.statusCode || 'FAILED'})\n\`\`\`bash\ncurl -X ${firstError.method || 'GET'} '${firstError.url}'\n\`\`\`\n`;
+                if (firstError.responseBody && firstError.responseBody.content) {
+                    r += `*Response Body:*\n\`\`\`json\n${firstError.responseBody.content}\n\`\`\`\n\n`;
+                }
             }
 
             return r;
+        }
+
+        /* 🚀 1-Click Automated Jira Flow: Copies Screenshot Blob, Auto-Downloads HAR & Screenshot, and Opens Prefilled Jira */
+        function openJiraPrefilledTab() {
+            saveJiraConfig();
+            const rawDomain = document.getElementById('jira-domain-input').value.trim() || localStorage.getItem('tracea_jira_domain');
+            let jiraDomain = rawDomain;
+
+            if (!jiraDomain) {
+                jiraDomain = prompt('Enter your Jira Domain (e.g., your-company.atlassian.net):');
+                if (!jiraDomain) return;
+                jiraDomain = jiraDomain.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+                localStorage.setItem('tracea_jira_domain', jiraDomain);
+                document.getElementById('jira-domain-input').value = jiraDomain;
+            } else {
+                jiraDomain = jiraDomain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+            }
+
+            const project = (document.getElementById('jira-project-input').value.trim() || localStorage.getItem('tracea_jira_project') || '').toUpperCase();
+            const sessionEvents = allEvents.filter(e => (e.sessionName || e.sessionId || 'Default Session') === currentModalSession);
+            const firstError = sessionEvents.find(e => (e.statusCode && e.statusCode >= 400) || !!e.error);
+
+            // Bug Summary Title
+            const summaryTitle = firstError
+                ? `[${currentModalSession}] Bug: ${firstError.method} ${firstError.path || firstError.url} returned ${firstError.statusCode || 'Failure'}`
+                : `[${currentModalSession}] Network Bug Report`;
+
+            // Description
+            const description = generateSessionJiraReport(currentModalSession, sessionEvents);
+
+            // 1. Copy screenshot image directly to OS clipboard
+            copyScreenshotToClipboard(false);
+
+            // 2. Auto-download annotated screenshot image
+            downloadAnnotatedScreenshot();
+
+            // 3. Auto-download session HAR file
+            downloadModalSessionHar();
+
+            // 4. Build Jira pre-filled URL and open in new tab
+            let jiraUrl = `https://${jiraDomain}/secure/CreateIssueDetails!init.jspa?summary=${encodeURIComponent(summaryTitle)}&description=${encodeURIComponent(description)}&issuetype=1`;
+            if (project) {
+                jiraUrl += `&pid=${encodeURIComponent(project)}`;
+            }
+
+            window.open(jiraUrl, '_blank');
+
+            showToast('🚀 Jira opened in new tab! Screenshot copied to clipboard (press Cmd+V in Jira to attach) and files downloaded.');
+        }
+
+        function copyScreenshotToClipboard(showFeedback = true) {
+            canvas.toBlob(function(blob) {
+                if (blob && navigator.clipboard && navigator.clipboard.write) {
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    navigator.clipboard.write([item])
+                        .then(() => {
+                            if (showFeedback) showToast('Screenshot image copied to clipboard! Press Cmd+V/Ctrl+V in Jira to paste.');
+                        })
+                        .catch(err => {
+                            console.warn('Clipboard write error:', err);
+                        });
+                }
+            }, 'image/png');
         }
 
         function refreshModalScreenshot() {
@@ -1088,7 +1178,6 @@
             link.download = 'tracea_screenshot_' + Date.now() + '.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
-            showToast('Annotated screenshot downloaded!');
         }
 
         function downloadModalSessionHar() {
@@ -1219,7 +1308,7 @@
             const toast = document.getElementById('toast');
             toast.textContent = msg;
             toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+            setTimeout(() => { toast.style.display = 'none'; }, 4000);
         }
 
         window.onload = initWebSocket;

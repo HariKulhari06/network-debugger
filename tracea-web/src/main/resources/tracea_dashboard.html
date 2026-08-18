@@ -74,15 +74,18 @@
         .request-list { flex: 1; overflow-y: auto; }
         
         /* Session Header */
-        .session-group-header { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: #181C2C; border-bottom: 1px solid var(--border-color); border-top: 1px solid var(--border-color); font-size: 11.5px; font-weight: 700; color: var(--accent-purple); position: sticky; top: 0; z-index: 5; }
+        .session-group-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #181C2C; border-bottom: 1px solid var(--border-color); border-top: 1px solid var(--border-color); font-size: 11.5px; font-weight: 700; color: var(--accent-purple); position: sticky; top: 0; z-index: 5; }
         .session-group-header:first-child { border-top: none; }
-        .session-left-info { display: flex; align-items: center; gap: 6px; overflow: hidden; cursor: pointer; }
+        .session-left-info { display: flex; align-items: center; gap: 6px; overflow: hidden; cursor: pointer; flex: 1; }
         .session-caret { font-size: 9px; color: var(--text-muted); transition: transform 0.15s; user-select: none; width: 12px; text-align: center; }
         .session-caret.collapsed { transform: rotate(-90deg); }
         .session-name-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .session-count-tag { background: var(--bg-card); color: var(--text-muted); padding: 1px 6px; border-radius: 8px; font-size: 10px; font-family: ui-monospace, monospace; border: 1px solid var(--border-color); }
-        .session-export-link { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 2px 7px; border-radius: 4px; font-size: 10.5px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
-        .session-export-link:hover { color: var(--primary); border-color: var(--primary); }
+        .session-actions-group { display: flex; align-items: center; gap: 6px; }
+        .session-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 3px 8px; border-radius: 5px; font-size: 10.5px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
+        .session-btn:hover { color: var(--primary); border-color: var(--primary); background: var(--bg-card-hover); }
+        .session-btn.jira-btn { color: var(--accent-orange); border-color: rgba(255, 203, 107, 0.3); }
+        .session-btn.jira-btn:hover { background: var(--accent-orange-bg); border-color: var(--accent-orange); color: var(--accent-orange); }
 
         .request-row { padding: 9px 14px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background 0.1s; display: flex; flex-direction: column; gap: 4px; }
         .request-row:hover { background: var(--bg-card-hover); }
@@ -188,8 +191,28 @@
         .timing-bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--primary), #82AAFF); transition: width 0.3s; }
         .timing-val { width: 70px; text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 600; color: var(--text-main); }
 
+        /* Session Jira Bug Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5, 7, 12, 0.85); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; width: 95vw; max-width: 1200px; height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 40px rgba(0,0,0,0.6); overflow: hidden; }
+        .modal-header { padding: 14px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
+        .modal-title { font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .modal-close-btn { background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+        .modal-close-btn:hover { color: var(--accent-red); background: var(--bg-card-hover); }
+
+        .modal-body { display: flex; flex: 1; overflow: hidden; }
+        .modal-left-pane { width: 45%; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; background: var(--bg-base); padding: 16px; gap: 12px; }
+        .canvas-toolbar { display: flex; align-items: center; justify-content: space-between; }
+        .canvas-container { flex: 1; background: #000; border: 1px solid var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        #screenshot-canvas { max-width: 100%; max-height: 100%; object-fit: contain; cursor: crosshair; }
+
+        .modal-right-pane { width: 55%; display: flex; flex-direction: column; padding: 16px; gap: 12px; background: var(--bg-surface); overflow-y: auto; }
+        .format-switch-row { display: flex; align-items: center; justify-content: space-between; }
+        .modal-preview-block { background: #0A0C13; border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; font-family: ui-monospace, monospace; font-size: 11.5px; line-height: 1.5; color: var(--text-main); white-space: pre-wrap; word-break: break-all; flex: 1; overflow-y: auto; max-height: 500px; }
+
+        .modal-footer { padding: 12px 20px; background: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
+
         /* Toast Feedback */
-        #toast { position: fixed; bottom: 20px; right: 20px; background: #2E7D32; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,0.5); display: none; z-index: 1000; animation: fadeIn 0.2s; }
+        #toast { position: fixed; bottom: 20px; right: 20px; background: #2E7D32; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,0.5); display: none; z-index: 2000; animation: fadeIn 0.2s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -300,6 +323,58 @@
         </section>
     </main>
 
+    <!-- Session Jira Bug Report Modal -->
+    <div class="modal-overlay" id="jira-bug-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span>🐛 Session Bug Package Generator</span>
+                    <span id="modal-session-tag" class="session-count-tag">Session</span>
+                </div>
+                <button class="modal-close-btn" onclick="closeJiraBugModal()">✖</button>
+            </div>
+            <div class="modal-body">
+                <!-- Left: Live Screenshot & Markup Canvas -->
+                <div class="modal-left-pane">
+                    <div class="canvas-toolbar">
+                        <span style="font-weight: 700; color: var(--text-main); font-size: 12px;">📱 Mobile Screen Markup</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="session-btn" onclick="refreshModalScreenshot()">🔄 Refresh</button>
+                            <button class="session-btn" onclick="clearCanvasMarkup()">🧹 Clear</button>
+                            <button class="session-btn" onclick="downloadAnnotatedScreenshot()">💾 Save Image</button>
+                        </div>
+                    </div>
+                    <div class="canvas-container" id="canvas-container-box">
+                        <canvas id="screenshot-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Right: Formatted Markdown & Timeline Preview -->
+                <div class="modal-right-pane">
+                    <div class="format-switch-row">
+                        <span style="font-weight: 700; color: var(--text-main); font-size: 12px;">📋 Bug Description & Timeline</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="session-btn" id="format-jira-btn" onclick="setModalFormat('jira')">Jira Format</button>
+                            <button class="session-btn" id="format-md-btn" onclick="setModalFormat('markdown')">Markdown / Slack</button>
+                        </div>
+                    </div>
+                    <div class="modal-preview-block" id="modal-markdown-preview">
+                        <!-- Markdown text injected here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div style="color: var(--text-muted); font-size: 11.5px;">
+                    📎 Includes complete session timeline, failing cURLs, and live mobile screenshot.
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="action-chip-btn" onclick="downloadModalSessionHar()">📦 Download Session HAR</button>
+                    <button class="action-chip-btn highlight" onclick="copyModalMarkdown()">📋 Copy Bug Description</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="toast"></div>
 
     <script>
@@ -308,7 +383,16 @@
         let activeFilter = 'ALL';
         let currentTab = 'overview';
         let collapsedSessions = {};
+        let currentModalSession = null;
+        let currentModalFormat = 'jira';
         let ws = null;
+
+        // Screenshot Drawing Canvas Variables
+        const canvas = document.getElementById('screenshot-canvas');
+        const ctx = canvas.getContext('2d');
+        let bgImage = new Image();
+        let isDrawing = false;
+        let lastX = 0, lastY = 0;
 
         function initWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -417,7 +501,6 @@
                 return;
             }
 
-            // Group filtered events by session
             const groups = {};
             filtered.forEach(e => {
                 const sName = e.sessionName || e.sessionId || 'Default Session';
@@ -429,6 +512,7 @@
             for (const [sName, items] of Object.entries(groups)) {
                 const isCollapsed = collapsedSessions[sName] === true;
                 const countText = items.length === 1 ? '1 request' : items.length + ' requests';
+                const hasErrors = items.some(e => (e.statusCode && e.statusCode >= 400) || !!e.error);
 
                 finalHtml += '<div class="session-group-wrapper" data-session="' + escapeHtml(sName) + '">' +
                     '<div class="session-group-header">' +
@@ -436,8 +520,12 @@
                             '<span class="session-caret ' + (isCollapsed ? 'collapsed' : '') + '">▼</span>' +
                             '<span class="session-name-label">' + escapeHtml(sName) + '</span>' +
                             '<span class="session-count-tag">' + countText + '</span>' +
+                            (hasErrors ? '<span style="color: var(--accent-red); font-size: 11px;">⚠️</span>' : '') +
                         '</div>' +
-                        '<button class="session-export-link" onclick="exportSessionHar(\'' + escapeBackticks(sName) + '\')">📦 Export HAR</button>' +
+                        '<div class="session-actions-group">' +
+                            '<button class="session-btn jira-btn" onclick="openJiraBugModal(\'' + escapeBackticks(sName) + '\')">🐛 Jira Report</button>' +
+                            '<button class="session-btn" onclick="exportSessionHar(\'' + escapeBackticks(sName) + '\')">📦 HAR</button>' +
+                        '</div>' +
                     '</div>' +
                     '<div class="session-items-container" style="display: ' + (isCollapsed ? 'none' : 'block') + ';">';
 
@@ -817,6 +905,200 @@
             card.querySelectorAll('.json-collapsed-preview').forEach(el => el.style.display = 'inline-block');
             card.querySelectorAll('.json-closing-line').forEach(el => el.style.display = 'none');
             card.querySelectorAll('.json-caret').forEach(el => el.classList.add('collapsed'));
+        }
+
+        /* Session Jira Bug Report Modal & Canvas Drawing Logic */
+        function openJiraBugModal(sName) {
+            currentModalSession = sName;
+            document.getElementById('modal-session-tag').textContent = sName;
+            document.getElementById('jira-bug-modal').style.display = 'flex';
+            setModalFormat('jira');
+            refreshModalScreenshot();
+            setupCanvasDrawing();
+        }
+
+        function closeJiraBugModal() {
+            document.getElementById('jira-bug-modal').style.display = 'none';
+        }
+
+        function setModalFormat(format) {
+            currentModalFormat = format;
+            document.getElementById('format-jira-btn').classList.toggle('active', format === 'jira');
+            document.getElementById('format-md-btn').classList.toggle('active', format === 'markdown');
+
+            const sessionEvents = allEvents.filter(e => (e.sessionName || e.sessionId || 'Default Session') === currentModalSession);
+            const reportText = currentModalFormat === 'jira' ? generateSessionJiraReport(currentModalSession, sessionEvents) : generateSessionMarkdownReport(currentModalSession, sessionEvents);
+            document.getElementById('modal-markdown-preview').textContent = reportText;
+        }
+
+        function generateSessionJiraReport(sName, events) {
+            const total = events.length;
+            const errors = events.filter(e => (e.statusCode && e.statusCode >= 400) || !!e.error);
+            const firstEvent = events[0] || {};
+            const lastEvent = events[events.length - 1] || {};
+            const durationMs = (lastEvent.timestamp && firstEvent.timestamp) ? (lastEvent.timestamp - firstEvent.timestamp) : 0;
+            const durationText = durationMs > 0 ? (durationMs / 1000).toFixed(1) + 's' : '-';
+
+            let r = `h3. 🐛 Bug Report: Session Failure in [${sName}]\n\n`;
+            r += `h4. 📱 Session & Environment Diagnostics\n`;
+            r += `|| Property || Details ||\n`;
+            r += `| *Session Name* | ${sName} |\n`;
+            r += `| *Session Duration* | ${durationText} (${total} total transactions) |\n`;
+            r += `| *Error Summary* | ${errors.length > 0 ? '{color:red}*' + errors.length + ' Failed Requests*{color}' : '{color:green}*No Network Errors*{color}'} |\n\n`;
+
+            r += `h4. ⏱️ Session Network Timeline (Chronological)\n`;
+            events.forEach((e, idx) => {
+                const isErr = (e.statusCode && e.statusCode >= 400) || !!e.error;
+                const statusStr = e.statusCode ? `${e.statusCode} ${e.statusMessage || ''}` : (e.error ? 'FAILED' : 'OK');
+                const durVal = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? e.timing.endTimestamp - e.timing.startTimestamp : 0);
+                const rootTag = isErr && idx === events.findIndex(x => (x.statusCode && x.statusCode >= 400) || !!x.error) ? ' ❌ *[ROOT CAUSE]*' : '';
+
+                r += `# (/) {{${e.method || 'GET'} ${e.path || e.url}}} -> ${isErr ? '{color:red}*' : '{color:green}*'}${statusStr}${isErr ? '*{color}' : '*{color}'} (${durVal} ms)${rootTag}\n`;
+            });
+
+            if (errors.length > 0) {
+                r += `\nh4. 💥 Failing Requests Deep-Dive\n`;
+                errors.forEach(err => {
+                    r += `* *Endpoint:* {color:red}*${err.method} ${err.path || err.url}*{color}\n`;
+                    r += `* *Status:* ${err.statusCode || 'FAILED'} ${err.statusMessage || ''}\n`;
+                    r += `*cURL Command:*\n{code:bash}\ncurl -X ${err.method || 'GET'} '${err.url}'`;
+                    if (err.requestHeaders) {
+                        for (const k in err.requestHeaders) {
+                            r += ` \\\n  -H '${k}: ${Array.isArray(err.requestHeaders[k]) ? err.requestHeaders[k].join(', ') : err.requestHeaders[k]}'`;
+                        }
+                    }
+                    if (err.requestBody && err.requestBody.content) {
+                        r += ` \\\n  -d '${err.requestBody.content}'`;
+                    }
+                    r += `\n{code}\n\n`;
+
+                    if (err.responseBody && err.responseBody.content) {
+                        r += `*Server Error Response:*\n{code:json}\n${err.responseBody.content}\n{code}\n\n`;
+                    }
+                });
+            }
+
+            r += `h4. 📎 Attachments\n`;
+            r += `* *Screenshot:* {{attached_screenshot.png}}\n`;
+            r += `* *Session HAR:* {{tracea_session_${Date.now()}.har}}\n`;
+
+            return r;
+        }
+
+        function generateSessionMarkdownReport(sName, events) {
+            const total = events.length;
+            const errors = events.filter(e => (e.statusCode && e.statusCode >= 400) || !!e.error);
+            const firstEvent = events[0] || {};
+            const lastEvent = events[events.length - 1] || {};
+            const durationMs = (lastEvent.timestamp && firstEvent.timestamp) ? (lastEvent.timestamp - firstEvent.timestamp) : 0;
+            const durationText = durationMs > 0 ? (durationMs / 1000).toFixed(1) + 's' : '-';
+
+            let r = `### 🐛 Bug Report: Session Failure in [${sName}]\n\n`;
+            r += `#### 📱 Session Diagnostics\n`;
+            r += `- **Session**: ${sName}\n`;
+            r += `- **Duration**: ${durationText} (${total} requests)\n`;
+            r += `- **Errors**: ${errors.length} failed\n\n`;
+
+            r += `#### ⏱️ Session Network Timeline\n`;
+            events.forEach((e, idx) => {
+                const isErr = (e.statusCode && e.statusCode >= 400) || !!e.error;
+                const statusStr = e.statusCode ? `${e.statusCode} ${e.statusMessage || ''}` : (e.error ? 'FAILED' : 'OK');
+                const durVal = (e.timing && e.timing.totalMs) || (e.timing && e.timing.endTimestamp && e.timing.startTimestamp ? e.timing.endTimestamp - e.timing.startTimestamp : 0);
+                const rootTag = isErr && idx === events.findIndex(x => (x.statusCode && x.statusCode >= 400) || !!x.error) ? ' ❌ **[ROOT CAUSE]**' : '';
+                r += `${idx + 1}. \`${e.method || 'GET'} ${e.path || e.url}\` -> **${statusStr}** (${durVal} ms)${rootTag}\n`;
+            });
+
+            if (errors.length > 0) {
+                r += `\n#### 💥 Failing Requests\n`;
+                errors.forEach(err => {
+                    r += `**${err.method} ${err.path || err.url}** (${err.statusCode || 'FAILED'})\n\`\`\`bash\ncurl -X ${err.method || 'GET'} '${err.url}'\n\`\`\`\n`;
+                    if (err.responseBody && err.responseBody.content) {
+                        r += `*Response Body:*\n\`\`\`json\n${err.responseBody.content}\n\`\`\`\n\n`;
+                    }
+                });
+            }
+
+            return r;
+        }
+
+        function refreshModalScreenshot() {
+            bgImage = new Image();
+            bgImage.crossOrigin = "anonymous";
+            bgImage.src = '/api/device/screenshot?t=' + Date.now();
+            bgImage.onload = function() {
+                canvas.width = bgImage.width;
+                canvas.height = bgImage.height;
+                ctx.drawImage(bgImage, 0, 0);
+            };
+            bgImage.onerror = function() {
+                canvas.width = 400;
+                canvas.height = 700;
+                ctx.fillStyle = '#171926';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#8E95B8';
+                ctx.font = '14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('📱 Mobile screen preview', canvas.width / 2, canvas.height / 2);
+            };
+        }
+
+        function setupCanvasDrawing() {
+            canvas.onmousedown = function(e) {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                lastX = (e.clientX - rect.left) * scaleX;
+                lastY = (e.clientY - rect.top) * scaleY;
+            };
+
+            canvas.onmousemove = function(e) {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const currentX = (e.clientX - rect.left) * scaleX;
+                const currentY = (e.clientY - rect.top) * scaleY;
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.strokeStyle = '#F07178';
+                ctx.lineWidth = 8;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                lastX = currentX;
+                lastY = currentY;
+            };
+
+            canvas.onmouseup = function() { isDrawing = false; };
+            canvas.onmouseleave = function() { isDrawing = false; };
+        }
+
+        function clearCanvasMarkup() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (bgImage.complete && bgImage.naturalWidth > 0) {
+                ctx.drawImage(bgImage, 0, 0);
+            }
+        }
+
+        function downloadAnnotatedScreenshot() {
+            const link = document.createElement('a');
+            link.download = 'tracea_screenshot_' + Date.now() + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('Annotated screenshot downloaded!');
+        }
+
+        function downloadModalSessionHar() {
+            if (!currentModalSession) return;
+            exportSessionHar(currentModalSession);
+        }
+
+        function copyModalMarkdown() {
+            const text = document.getElementById('modal-markdown-preview').textContent;
+            copyText(text, 'Bug description copied to clipboard!');
         }
 
         // Productivity Actions

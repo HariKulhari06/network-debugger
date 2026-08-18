@@ -17,6 +17,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
@@ -153,7 +154,20 @@ object TraceaWebServer {
                         call.respondText(harString, ContentType.Application.Json)
                     }
 
-                    // 7. Real-Time WebSocket Traffic Stream
+                    // 7. Live Device Screenshot
+                    get("/api/device/screenshot") {
+                        val screenshotBytes = TraceaActivityTracker.captureCurrentScreen()
+                        if (screenshotBytes != null) {
+                            call.respondBytes(
+                                bytes = screenshotBytes,
+                                contentType = ContentType.Image.PNG
+                            )
+                        } else {
+                            call.respond(HttpStatusCode.NotFound, "No active foreground screen available")
+                        }
+                    }
+
+                    // 8. Real-Time WebSocket Traffic Stream
                     webSocket("/ws/traffic") {
                         _connectedClientsCount.value++
                         var streamingJob: kotlinx.coroutines.Job? = null

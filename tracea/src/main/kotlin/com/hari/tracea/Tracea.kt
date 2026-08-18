@@ -54,8 +54,11 @@ object Tracea {
         TraceaServiceLocator.sessionId = DebuggerSession.sessionId
         TraceaServiceLocator.sessionName = DebuggerSession.sessionName
         
-        // Wire Web Server store
+        // Wire Web Server store & Activity Tracker
         com.hari.tracea.web.TraceaWebServer.store = _store
+        (context.applicationContext as? android.app.Application)?.let {
+            com.hari.tracea.web.TraceaActivityTracker.register(it)
+        }
         
         // Start pipeline: collector events -> redaction -> store
         scope.launch {

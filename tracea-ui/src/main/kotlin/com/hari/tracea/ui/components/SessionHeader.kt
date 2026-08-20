@@ -62,7 +62,7 @@ fun SessionHeader(
             modifier = Modifier.weight(1f)
         )
         Text(
-            text = "$requestCount reqs",
+            text = if (requestCount == 1) "1 req" else "$requestCount reqs",
             color = colors.onSurfaceVariant,
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium

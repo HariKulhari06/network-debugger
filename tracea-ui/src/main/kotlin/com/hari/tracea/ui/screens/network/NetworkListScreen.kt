@@ -88,7 +88,7 @@ fun NetworkListScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "$totalCount requests",
+                                    text = if (totalCount == 1) "1 request" else "$totalCount requests",
                                     color = colors.onSurfaceVariant,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium

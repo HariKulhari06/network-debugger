@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <cache-path name="shared_transactions" path="shared_transactions/" />
+    <cache-path name="tracea_cache" path="." />
+    <files-path name="tracea_files" path="." />
 </paths>

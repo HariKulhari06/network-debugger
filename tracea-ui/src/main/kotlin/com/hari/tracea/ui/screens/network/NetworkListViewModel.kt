@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -47,11 +48,9 @@ class NetworkListViewModel : ViewModel() {
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val totalCount: StateFlow<Int> = combine(
-        store?.getAll() ?: MutableStateFlow(emptyList())
-    ) { eventsList ->
-        eventsList.size
-    }.stateIn(viewModelScope, SharingStarted.Lazily, 0)
+    val totalCount: StateFlow<Int> = (store?.getAll() ?: MutableStateFlow(emptyList()))
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.Lazily, 0)
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query

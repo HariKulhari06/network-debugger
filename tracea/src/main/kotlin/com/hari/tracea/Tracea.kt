@@ -54,6 +54,12 @@ object Tracea {
         TraceaServiceLocator.sessionId = DebuggerSession.sessionId
         TraceaServiceLocator.sessionName = DebuggerSession.sessionName
         
+        // Initialize Floating Button Overlay Manager
+        val app = context.applicationContext as? android.app.Application
+        if (app != null) {
+            com.hari.tracea.ui.overlay.FloatingButtonManager.init(app, config)
+        }
+
         // Start pipeline: collector events -> redaction -> store
         scope.launch {
             _collector.events.collect { event ->
@@ -65,8 +71,24 @@ object Tracea {
                 }
             }
         }
+
+        // Keep floating overlay request count up-to-date
+        scope.launch {
+            _store.getAll().collect { events ->
+                com.hari.tracea.ui.overlay.FloatingButtonManager.updateRequestCount(events.size)
+            }
+        }
         
         initialized = true
+    }
+
+    /**
+     * Dynamically enable or disable the floating debug overlay button.
+     */
+    fun setFloatingButtonEnabled(enabled: Boolean) {
+        if (initialized) {
+            com.hari.tracea.ui.overlay.FloatingButtonManager.setEnabled(enabled)
+        }
     }
 
     /**
